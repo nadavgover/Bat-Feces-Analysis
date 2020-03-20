@@ -7,8 +7,8 @@ from common import read_data
 from validate_data import get_valid_and_invalid_files
 
 # FRUITS = ["apple", "banana", "mix"]
-SAMPLE_TIMES = ["after 5", "after 8", "before"]
-SAMPLE_LOCATIONS = ["oral", "anal"]
+SAMPLE_TIMES = ["after 5", "after 8", "before", "all"]
+SAMPLE_LOCATIONS = ["oral", "anal", "all"]
 MAX_INTERESTING_MOLECULAR_WEIGHT = 750
 
 
@@ -93,10 +93,20 @@ def save_to_file(file, data_to_save, mode):
         np.save(f, data_to_save)
 
 
-def __get_existing_data(data_files, data_width, fruits=("apple", "banana", "mix"), sample_time="after 5", sample_location="anal"):
-    if sample_time.lower() not in SAMPLE_TIMES:
+def __get_existing_data(data_files, data_width=2100, fruits=("apple", "banana", "mix"), sample_time="after 5",
+                        sample_location="anal"):
+    if type(sample_time) == list:
+        for _sample_time in sample_time:
+            if _sample_time.lower() not in SAMPLE_TIMES:
+                raise ValueError("sample_time must be in {}".format(SAMPLE_TIMES))
+    if type(sample_location) == list:
+        for _sample_location in sample_location:
+            if _sample_location.lower() not in SAMPLE_LOCATIONS:
+                raise ValueError("sample_location must be in {}".format(SAMPLE_LOCATIONS))
+
+    if type(sample_time) == str and sample_time.lower() not in SAMPLE_TIMES:
         raise ValueError("sample_time must be in {}".format(SAMPLE_TIMES))
-    if sample_location.lower() not in SAMPLE_LOCATIONS:
+    if type(sample_location) == str and sample_location.lower() not in SAMPLE_LOCATIONS:
         raise ValueError("sample_location must be in {}".format(SAMPLE_LOCATIONS))
 
     existing_data = None
@@ -105,18 +115,42 @@ def __get_existing_data(data_files, data_width, fruits=("apple", "banana", "mix"
 
     # get the data from the valid data files
     for data_file in data_files:
-        if sample_time.lower() not in data_file.lower():
-            continue
-        if sample_location.lower() not in data_file.lower():
-            continue
+        if type(sample_time) == list:
+            sample_time_in_data_file = False
+            for _sample_time in sample_time:
+                if _sample_time.lower() in data_file.lower():
+                    sample_time_in_data_file = True
+                    break
+            if not sample_time_in_data_file:
+                continue
+        else:
+            if sample_time.lower() != "all":
+                if sample_time.lower() not in data_file.lower():
+                    continue
+
+        if type(sample_location) == list:
+            sample_location_in_data_file = False
+            for _sample_location in sample_location:
+                if _sample_location.lower() in data_file.lower():
+                    sample_location_in_data_file = True
+                    break
+            if not sample_location_in_data_file:
+                continue
+        else:
+            if sample_location.lower() != "all":
+                if sample_location.lower() not in data_file.lower():
+                    continue
 
         label = get_label(file_path=data_file, fruits=fruits)
         if label == "Unknown fruit":
             continue
+
         data_read = read_data(filename=data_file)
         data_numpy = np.vstack((np.array(data_read["x"]), np.array(data_read["y"])))
 
         # make all the data the same size, clip the end of it. The end is not interesting anyway
+        if data_numpy.shape[1] <= data_width:
+            continue
         data_numpy = data_numpy[:, 0:data_width]
 
         if existing_data is None:
@@ -184,4 +218,4 @@ if __name__ == '__main__':
     if create_now:
         valid_files, _ = get_valid_and_invalid_files(root_dir="YOMIRAN")
         create_dataset(data_files=valid_files, fruits=fruits, size_of_dataset=60000, train_data_percentage=0.8,
-                       tolerance=1, number_of_samples_to_alter=100)
+                       tolerance=1, number_of_samples_to_alter=100, sample_time=["after 5", "after 8"])
