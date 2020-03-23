@@ -10,22 +10,25 @@ from fruit_label_enum import create_fruit_labels
 from predict import load_model, predict
 
 
-def main(train_spectrum_path=r"dataset/train_spectrum1.npy", test_spectrum_path=r"dataset/test_spectrum1.npy",
-         train_labels_path=r"dataset/train_labels1.npy", test_labels_path=r"dataset/test_labels1.npy",
+def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r"dataset/test_spectrum.npy",
+         train_labels_path=r"dataset/train_labels.npy", test_labels_path=r"dataset/test_labels.npy",
          batch_size=20, learning_rate=0.01, num_epochs=20, kernel_size=(1, 10), padding=(1, 5), dropout=True,
          drop_prob=0.2, batch_normalization=True, weight_decay=True, weight_decay_amount=0.01, data_width=2100,
          model_save_path=r"model.pth", fruits=("apple", "banana", "mix"), create_dataset_now=False, root_dir="YOMIRAN",
          num_channels_layer1=3, num_channels_layer2=6, sample_time="after 5", sample_location="anal", tolerance=1,
          number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8, train_now=False,
-         show_statistics=True, predict_now=False, file_to_predict=r"apple neg.txt", confidence_threshold=0.7):
+         show_statistics=True, predict_now=False, file_to_predict=r"apple neg.txt", confidence_threshold=0.7,
+         validate_hierarchy=True, validate_filename_format=True, validate_empty_file=True):
 
     # create data set
     if create_dataset_now:
-        valid_files, _ = get_valid_and_invalid_files(root_dir=root_dir)
+        valid_files, _ = get_valid_and_invalid_files(root_dir=root_dir, validate_empty_file=validate_empty_file,
+                                                     validate_filename_format=validate_filename_format,
+                                                     validate_hierarchy=validate_hierarchy)
         create_dataset(data_files=valid_files, fruits=fruits, size_of_dataset=size_of_dataset,
                        train_data_percentage=train_data_percentage, tolerance=tolerance,
                        number_of_samples_to_alter=number_of_samples_to_alter,
-                       train_spectrum_path=Path(train_spectrum_path),train_labels_path=Path(train_labels_path),
+                       train_spectrum_path=Path(train_spectrum_path), train_labels_path=Path(train_labels_path),
                        test_spectrum_path=Path(test_spectrum_path), test_labels_path=Path(test_labels_path),
                        data_width=data_width, sample_time=sample_time, sample_location=sample_location)
 

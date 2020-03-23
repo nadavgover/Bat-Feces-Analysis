@@ -216,6 +216,7 @@ if __name__ == '__main__':
     create_now = False
     fruits = ("apple", "banana", "mix")
     if create_now:
-        valid_files, _ = get_valid_and_invalid_files(root_dir="YOMIRAN")
+        valid_files, _ = get_valid_and_invalid_files(root_dir="YOMIRAN", validate_hierarchy=True,
+                                                     validate_filename_format=True, validate_empty_file=True)
         create_dataset(data_files=valid_files, fruits=fruits, size_of_dataset=60000, train_data_percentage=0.8,
                        tolerance=1, number_of_samples_to_alter=100, sample_time=["after 5", "after 8"])
