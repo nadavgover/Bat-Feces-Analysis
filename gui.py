@@ -16,7 +16,52 @@ DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_s
                                                                                    "after 5, after 8",
                                                                                    "after 5, before",
                                                                                    "after 8, before", "all"],
-            "sample_locations": ["anal", "oral", "all"]}
+            "sample_locations": ["anal", "oral", "all"], "train_spectrum_path": "train_spectrum",
+            "test_spectrum_path": "test_spectrum", "train_labels_path": "train_labels",
+            "test_labels_path": "test_labels", "dataset_size": "60000", "train_data_percentage": "0.8",
+            "dataset_folder_name": "dataset"}
+
+
+class ToolTip(object):
+    def __init__(self, widget):
+        self.widget = widget
+        self.tipwindow = None
+        self.id = None
+        self.x = self.y = 0
+
+    def showtip(self, text):
+        """Display text in tooltip window"""
+        self.text = text
+        if self.tipwindow or not self.text:
+            return
+        x, y, cx, cy = self.widget.bbox("insert")
+        x = x + self.widget.winfo_rootx() + 17
+        y = y + cy + self.widget.winfo_rooty() + 17
+        self.tipwindow = tw = Toplevel(self.widget)
+        tw.wm_overrideredirect(1)
+        tw.wm_geometry("+%d+%d" % (x, y))
+        label = Label(tw, text=self.text, justify=LEFT,
+                      background="#ffffe0", relief=SOLID, borderwidth=1,
+                      font=("tahoma", "8", "normal"))
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        tw = self.tipwindow
+        self.tipwindow = None
+        if tw:
+            tw.destroy()
+
+
+def create_tooltip(widget, text):
+    toolTip = ToolTip(widget)
+
+    def enter(event):
+        toolTip.showtip(text)
+
+    def leave(event):
+        toolTip.hidetip()
+    widget.bind('<Enter>', enter)
+    widget.bind('<Leave>', leave)
 
 
 class FinalProjectGui(Tk):
@@ -30,6 +75,7 @@ class FinalProjectGui(Tk):
         self.kernel_size = DEFAULTS["kernel_size"]
         self.padding = DEFAULTS["padding"]
         # self.confidence_threshold = DEFAULTS["confidence_threshold"]
+        self.tooltip_icon = PhotoImage(file="tooltip-black-16x16.png")
 
         # Adding tabs
         self.main_tab_parent = ttk.Notebook(self)
@@ -53,6 +99,7 @@ class FinalProjectGui(Tk):
         self.tabs_in_create_dataset_parent.pack(expand=1, fill="both")
 
         self.design_create_dataset_settings_tab()
+        self.design_create_dataset_advanced_tab()
 
     def design_create_dataset_settings_tab(self):
         # root dir
@@ -107,6 +154,147 @@ class FinalProjectGui(Tk):
 
         self.create_dataset_button.place(relx=0.5, rely=0.90, anchor=CENTER)
 
+    def design_create_dataset_advanced_tab(self):
+        # create dataset folder
+        self.check_button_create_folder_for_dataset_intvar = IntVar()
+        self.check_button_create_folder_for_dataset_intvar.set(1)
+        self.check_button_create_folder_for_dataset = ttk.Checkbutton(self.advanced_create_dataset_tab,
+                                                                      text="Create a folder for the dataset",
+                                                                      variable=self.check_button_create_folder_for_dataset_intvar)
+        self.check_button_create_folder_for_dataset.place(relx=0.3, rely=0.07, anchor=CENTER)
+        # create dataset folder tooltip
+        self.create_folder_for_dataset_tooltip = ttk.Label(self.advanced_create_dataset_tab)
+        self.create_folder_for_dataset_tooltip.image = self.tooltip_icon
+        self.create_folder_for_dataset_tooltip["image"] = self.create_folder_for_dataset_tooltip.image
+        self.create_folder_for_dataset_tooltip.place(relx=0.04, rely=0.07, anchor=CENTER)
+        create_tooltip(widget=self.create_folder_for_dataset_tooltip, text="Create a folder named '{}' in {}\n"
+                                                                           "This folder will store all the created "
+                                                                           "dataset files.".format(DEFAULTS["dataset_folder_name"],
+                                                                                                   os.getcwd()))
+
+        # train spectrum path
+        self.train_spectrum_path_label = ttk.Label(self.advanced_create_dataset_tab, text="Train spectrum file path: ")
+        self.train_spectrum_path_label.place(relx=0.245, rely=0.15, anchor=CENTER)
+        self.train_spectrum_path_stringvar = StringVar()
+        self.train_spectrum_path_stringvar.set(DEFAULTS["train_spectrum_path"])
+        self.train_spectrum_path_entry = Entry(self.advanced_create_dataset_tab, justify=CENTER,
+                                               borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                               textvariable=self.train_spectrum_path_stringvar, bg="white")
+        self.train_spectrum_path_entry.place(relx=0.58, rely=0.15, anchor=CENTER)
+        # train spectrum path tooltip
+        self.train_spectrum_path_tooltip = ttk.Label(self.advanced_create_dataset_tab)
+        self.train_spectrum_path_tooltip.image = self.tooltip_icon
+        self.train_spectrum_path_tooltip["image"] = self.train_spectrum_path_tooltip.image
+        self.train_spectrum_path_tooltip.place(relx=0.04, rely=0.15, anchor=CENTER)
+        create_tooltip(widget=self.train_spectrum_path_tooltip, text="This file is where the created train spectrum "
+                                                                     "dataset will be saved.\nThe extension of the file"
+                                                                     " will be .npy, it is a binary file.\nThis file, "
+                                                                     "together with the train labels file, make up the"
+                                                                     " training dataset.")
+
+        # train labels path
+        self.train_labels_path_label = ttk.Label(self.advanced_create_dataset_tab, text="Train labels file path: ")
+        self.train_labels_path_label.place(relx=0.22, rely=0.23, anchor=CENTER)
+        self.train_labels_path_stringvar = StringVar()
+        self.train_labels_path_stringvar.set(DEFAULTS["train_labels_path"])
+        self.train_labels_path_entry = Entry(self.advanced_create_dataset_tab, justify=CENTER,
+                                             borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                             textvariable=self.train_labels_path_stringvar, bg="white")
+        self.train_labels_path_entry.place(relx=0.58, rely=0.23, anchor=CENTER)
+        # train labels path tooltip
+        self.train_labels_path_tooltip = ttk.Label(self.advanced_create_dataset_tab)
+        self.train_labels_path_tooltip.image = self.tooltip_icon
+        self.train_labels_path_tooltip["image"] = self.train_labels_path_tooltip.image
+        self.train_labels_path_tooltip.place(relx=0.04, rely=0.23, anchor=CENTER)
+        create_tooltip(widget=self.train_labels_path_tooltip, text="This file is where the created train labels "
+                                                                   "dataset will be saved.\nThe extension of the file"
+                                                                   " will be .npy, it is a binary file.\nThis file, "
+                                                                   "together with the train spectrum file, make up the"
+                                                                   " training dataset.")
+
+        # test spectrum path
+        self.test_spectrum_path_label = ttk.Label(self.advanced_create_dataset_tab, text="Test spectrum file path: ")
+        self.test_spectrum_path_label.place(relx=0.24, rely=0.31, anchor=CENTER)
+        self.test_spectrum_path_stringvar = StringVar()
+        self.test_spectrum_path_stringvar.set(DEFAULTS["test_spectrum_path"])
+        self.test_spectrum_path_entry = Entry(self.advanced_create_dataset_tab, justify=CENTER,
+                                              borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                              textvariable=self.test_spectrum_path_stringvar, bg="white")
+        self.test_spectrum_path_entry.place(relx=0.58, rely=0.31, anchor=CENTER)
+        # test spectrum path tooltip
+        self.test_spectrum_path_tooltip = ttk.Label(self.advanced_create_dataset_tab)
+        self.test_spectrum_path_tooltip.image = self.tooltip_icon
+        self.test_spectrum_path_tooltip["image"] = self.test_spectrum_path_tooltip.image
+        self.test_spectrum_path_tooltip.place(relx=0.04, rely=0.31, anchor=CENTER)
+        create_tooltip(widget=self.test_spectrum_path_tooltip, text="This file is where the created test spectrum "
+                                                                    "dataset will be saved.\nThe extension of the file"
+                                                                    " will be .npy, it is a binary file.\nThis file, "
+                                                                    "together with the test labels file, make up the"
+                                                                    " test dataset.")
+
+        # test labels path
+        self.test_labels_path_label = ttk.Label(self.advanced_create_dataset_tab, text="Test labels file path: ")
+        self.test_labels_path_label.place(relx=0.215, rely=0.39, anchor=CENTER)
+        self.test_labels_path_stringvar = StringVar()
+        self.test_labels_path_stringvar.set(DEFAULTS["test_labels_path"])
+        self.test_labels_path_entry = Entry(self.advanced_create_dataset_tab, justify=CENTER,
+                                            borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                            textvariable=self.test_labels_path_stringvar, bg="white")
+        self.test_labels_path_entry.place(relx=0.58, rely=0.39, anchor=CENTER)
+        # train labels path tooltip
+        self.test_labels_path_tooltip = ttk.Label(self.advanced_create_dataset_tab)
+        self.test_labels_path_tooltip.image = self.tooltip_icon
+        self.test_labels_path_tooltip["image"] = self.test_labels_path_tooltip.image
+        self.test_labels_path_tooltip.place(relx=0.04, rely=0.39, anchor=CENTER)
+        create_tooltip(widget=self.test_labels_path_tooltip, text="This file is where the created test labels "
+                                                                  "dataset will be saved.\nThe extension of the file"
+                                                                  " will be .npy, it is a binary file.\nThis file, "
+                                                                  "together with the test spectrum file, make up the"
+                                                                  " test dataset.")
+
+        # size of dataset
+        self.size_of_dataset_label = ttk.Label(self.advanced_create_dataset_tab, text="Size of dataset: ")
+        self.size_of_dataset_label.place(relx=0.185, rely=0.47, anchor=CENTER)
+        self.size_of_dataset_stringvar = StringVar()
+        validate_size_of_dataset_cmd = (self.register(self.validate_size_of_dataset))  # validate command
+        self.size_of_dataset_entry = Entry(self.advanced_create_dataset_tab, justify=CENTER,
+                                           borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                           textvariable=self.size_of_dataset_stringvar, bg="white",
+                                           validate='all',
+                                           validatecommand=(validate_size_of_dataset_cmd, '%P'))
+        self.size_of_dataset_entry.place(relx=0.58, rely=0.47, anchor=CENTER)
+        self.validate_size_of_dataset(text="-1")
+        # size of dataset tooltip
+        self.size_of_dataset_tooltip = ttk.Label(self.advanced_create_dataset_tab)
+        self.size_of_dataset_tooltip.image = self.tooltip_icon
+        self.size_of_dataset_tooltip["image"] = self.size_of_dataset_tooltip.image
+        self.size_of_dataset_tooltip.place(relx=0.04, rely=0.47, anchor=CENTER)
+        create_tooltip(widget=self.size_of_dataset_tooltip, text="Dataset size.\nMust be divisible by a thousand.")
+
+        # train data percentage
+        self.train_data_percentage_label = ttk.Label(self.advanced_create_dataset_tab, text="train data percentage : ")
+        self.train_data_percentage_label.place(relx=0.24, rely=0.55, anchor=CENTER)
+        self.train_data_percentage_stringvar = StringVar()
+        validate_train_data_percentage_cmd = (self.register(self.validate_train_data_percentage))  # validate command
+        self.train_data_percentage_entry = Entry(self.advanced_create_dataset_tab, justify=CENTER,
+                                                 borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                                 textvariable=self.train_data_percentage_stringvar, bg="white",
+                                                 validate='all',
+                                                 validatecommand=(validate_train_data_percentage_cmd, '%P'))
+        self.train_data_percentage_entry.place(relx=0.58, rely=0.55, anchor=CENTER)
+        self.validate_train_data_percentage(text="-1")  # hack to get the default value
+        # train data percentage  tooltip
+        self.train_data_percentage_tooltip = ttk.Label(self.advanced_create_dataset_tab)
+        self.train_data_percentage_tooltip.image = self.tooltip_icon
+        self.train_data_percentage_tooltip["image"] = self.train_data_percentage_tooltip.image
+        self.train_data_percentage_tooltip.place(relx=0.04, rely=0.55, anchor=CENTER)
+        create_tooltip(widget=self.train_data_percentage_tooltip, text="Determines how much out of the dataset will be "
+                                                                       "the training set in percent %\n"
+                                                                       "The rest of the data will be part of the "
+                                                                       "test set.\n"
+                                                                       "The size of the dataset times the train data "
+                                                                       "percentage must be divisible by a thousand.")
+
     def create_dataset(self):
         if not self.is_valid_create_dataset_inputs():
             return
@@ -124,8 +312,37 @@ class FinalProjectGui(Tk):
         if sample_location[0].lower() == "all":
             sample_location = "all"
 
+        create_dataset_folder = self.check_button_create_folder_for_dataset_intvar.get()
+        if create_dataset_folder:
+            try:
+                os.mkdir(path=os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"]))
+            except OSError:
+                pass  # folder already exists
+
+        train_spectrum_path = self.train_spectrum_path_entry.get()
+        train_spectrum_path = "".join([train_spectrum_path, ".npy"])
+        train_spectrum_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], train_spectrum_path)
+
+        train_labels_path = self.train_labels_path_entry.get()
+        train_labels_path = "".join([train_labels_path, ".npy"])
+        train_labels_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], train_labels_path)
+
+        test_spectrum_path = self.test_spectrum_path_entry.get()
+        test_spectrum_path = "".join([test_spectrum_path, ".npy"])
+        test_spectrum_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], test_spectrum_path)
+
+        test_labels_path = self.test_labels_path_entry.get()
+        test_labels_path = "".join([test_labels_path, ".npy"])
+        test_labels_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], test_labels_path)
+
+        size_of_dataset = int(self.size_of_dataset_entry.get())
+        train_data_percentage = float(self.train_data_percentage_entry.get())
+
         main(create_dataset_now=True, root_dir=self.root_dir, fruits=fruits, sample_time=sample_time,
-             sample_location=sample_location)
+             sample_location=sample_location, train_spectrum_path=train_spectrum_path,
+             train_labels_path=train_labels_path, test_spectrum_path=test_spectrum_path,
+             test_labels_path=test_labels_path, size_of_dataset=size_of_dataset,
+             train_data_percentage=train_data_percentage)
 
     def design_predict_tab(self):
         self.tabs_in_predict_parent = ttk.Notebook(self.predict_tab)
@@ -215,6 +432,38 @@ class FinalProjectGui(Tk):
         if not fruits:
             illegal_inputs.append(self.fruit_list_in_create_dataset_entry)
 
+        train_data_percentage = self.train_data_percentage_entry.get()
+        if not train_data_percentage:
+            illegal_inputs.append(self.train_data_percentage_entry)
+
+        train_spectrum_path = self.train_spectrum_path_entry.get()
+        if not train_spectrum_path:
+            illegal_inputs.append(self.train_spectrum_path_entry)
+
+        train_labels_path = self.train_labels_path_entry.get()
+        if not train_labels_path:
+            illegal_inputs.append(self.train_labels_path_entry)
+
+        test_spectrum_path = self.test_spectrum_path_entry.get()
+        if not test_spectrum_path:
+            illegal_inputs.append(self.test_spectrum_path_entry)
+
+        test_labels_path = self.test_labels_path_entry.get()
+        if not test_labels_path:
+            illegal_inputs.append(self.test_labels_path_entry)
+
+        size_of_dataset = self.size_of_dataset_entry.get()
+        if size_of_dataset:
+            if int(size_of_dataset) % 1000 != 0:
+                illegal_inputs.append(self.size_of_dataset_entry)
+        else:
+            illegal_inputs.append(self.size_of_dataset_entry)
+
+        if size_of_dataset and train_data_percentage:
+            if (int(size_of_dataset) * float(train_data_percentage)) % 1000 != 0:
+                illegal_inputs.append(self.train_data_percentage_entry)
+                illegal_inputs.append(self.size_of_dataset_entry)
+
         try:
             rootdir = self.root_dir
         except AttributeError:
@@ -223,8 +472,8 @@ class FinalProjectGui(Tk):
         if not os.path.exists(rootdir):
             illegal_inputs.append(self.rootdir_in_create_dataset_label)
 
-        for illegal_input in illegal_inputs:
-            illegal_input.configure(text="Browse file")
+        # for illegal_input in illegal_inputs:
+        #     illegal_input.configure(text="Browse file")
         for illegal_input in illegal_inputs:
             self.flash_widget(illegal_input)
 
@@ -344,6 +593,30 @@ class FinalProjectGui(Tk):
                     return False
         if text and float(text) > 1:  # only numbers between 0-1
             return False
+        return True
+
+    def validate_train_data_percentage(self, text):
+        if text == "-1":
+            self.train_data_percentage_stringvar.set(DEFAULTS["train_data_percentage"])
+        dot_counter = 0
+        for c in text:
+            if not c.isdigit():
+                if c == ".":
+                    dot_counter += 1
+                if dot_counter > 1:  # don't allow two dots
+                    return False
+                if c != ".":
+                    return False
+        if text and float(text) > 1:  # only numbers between 0-1
+            return False
+        return True
+
+    def validate_size_of_dataset(self, text):
+        if text == "-1":
+            self.size_of_dataset_stringvar.set(DEFAULTS["dataset_size"])
+        for c in text:
+            if not c.isdigit():
+                return False
         return True
 
 

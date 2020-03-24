@@ -12,9 +12,11 @@ SAMPLE_LOCATIONS = ["oral", "anal"]
 SAMPLE_TIMES = ["after 5", "after 8", "before"]
 
 
-def __is_file_saved_in_correct_directory_hierarchy(file_path):
+def __is_file_saved_in_correct_directory_hierarchy(file_path, root_dir):
     try:
-        root, name, fruit, location, time, filename = r"{}".format(file_path).split("\\")
+        root_dir_without_current_working_directory = r"{}".format(root_dir).split("\\")[-1]
+        index_of_root_dir = file_path.index(root_dir_without_current_working_directory)
+        root, name, fruit, location, time, filename = r"{}".format(file_path[index_of_root_dir:]).split("\\")
         if fruit.lower() not in FRUITS:
             return False
         if location.lower() not in SAMPLE_LOCATIONS:
@@ -71,7 +73,8 @@ def get_valid_and_invalid_files(root_dir="YOMIRAN", validate_hierarchy=True,
         for file in files:
             file_is_valid = True
             full_path = os.path.join(root, file)
-            if validate_hierarchy and not __is_file_saved_in_correct_directory_hierarchy(file_path=full_path):
+            if validate_hierarchy and not __is_file_saved_in_correct_directory_hierarchy(file_path=full_path,
+                                                                                         root_dir=root_dir):
                 invalid_files.append(InvalidFile(file_path=full_path, reason="Incorrect folder hierarchy"))
                 file_is_valid = False
             #     continue
