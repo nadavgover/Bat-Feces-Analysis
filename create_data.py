@@ -16,7 +16,7 @@ def create_dataset(data_files, fruits=("apple", "banana", "mix"), sample_time="a
                    tolerance=1, number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8,
                    train_spectrum_path=Path("dataset/train_spectrum.npy"), train_labels_path=Path("dataset/train_labels.npy"),
                    test_spectrum_path=Path("dataset/test_spectrum.npy"), test_labels_path=Path("dataset/test_labels.npy"),
-                   data_width=2100):
+                   data_width=2100, create_dataset_progress_bar_intvar=None):
 
     # Get existing data
     existing_data, existing_labels = __get_existing_data(fruits=fruits, data_files=data_files, sample_time=sample_time,
@@ -33,14 +33,16 @@ def create_dataset(data_files, fruits=("apple", "banana", "mix"), sample_time="a
                                        tolerance=tolerance, number_of_samples_to_alter=number_of_samples_to_alter,
                                        train_spectrum_path=train_spectrum_path, train_labels_path=train_labels_path,
                                        test_spectrum_path=test_spectrum_path, test_labels_path=test_labels_path,
-                                       data_width=data_width)
+                                       data_width=data_width,
+                                       create_dataset_progress_bar_intvar=create_dataset_progress_bar_intvar)
 
     return True
 
 
 def __create_train_or_test_dataset(size_of_dataset, type_of_dataset, existing_data, existing_labels, tolerance,
                                    number_of_samples_to_alter, train_spectrum_path, train_labels_path,
-                                   test_spectrum_path, test_labels_path, data_width):
+                                   test_spectrum_path, test_labels_path, data_width,
+                                   create_dataset_progress_bar_intvar=None):
     if type_of_dataset not in ["train", "test"]:
         raise ValueError("type_of_dataset must be in ['train', 'test']")
     if size_of_dataset % 1000 != 0:
@@ -86,6 +88,8 @@ def __create_train_or_test_dataset(size_of_dataset, type_of_dataset, existing_da
             save_to_file(test_spectrum_path, current_data, writing_to_file_mode)
             # save_to_file(TEST_LABEL_PATH, current_labels, writing_to_file_mode)
             save_to_file(test_labels_path, current_labels, writing_to_file_mode)
+
+        create_dataset_progress_bar_intvar.set(create_dataset_progress_bar_intvar.get() + 1000)
 
 
 def save_to_file(file, data_to_save, mode):

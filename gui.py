@@ -4,6 +4,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 from functools import partial
 import os
+import threading
 
 from main import main
 
@@ -335,14 +336,51 @@ class FinalProjectGui(Tk):
         test_labels_path = "".join([test_labels_path, ".npy"])
         test_labels_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], test_labels_path)
 
-        size_of_dataset = int(self.size_of_dataset_entry.get())
+        self.size_of_dataset = int(self.size_of_dataset_entry.get())
         train_data_percentage = float(self.train_data_percentage_entry.get())
 
-        main(create_dataset_now=True, root_dir=self.root_dir, fruits=fruits, sample_time=sample_time,
-             sample_location=sample_location, train_spectrum_path=train_spectrum_path,
-             train_labels_path=train_labels_path, test_spectrum_path=test_spectrum_path,
-             test_labels_path=test_labels_path, size_of_dataset=size_of_dataset,
-             train_data_percentage=train_data_percentage)
+        # progress bar
+        self.create_dataset_button["state"] = "disable"
+        self.create_dataset_progress_bar_intvar = IntVar()
+        self.create_dataset_progress_bar_intvar.set(0)
+        self.create_dataset_progress_bar = ttk.Progressbar(self.create_dataset_tab, orient=HORIZONTAL,
+                                                           length=250, mode="determinate",
+                                                           variable=self.create_dataset_progress_bar_intvar,
+                                                           maximum=self.size_of_dataset)
+        self.create_dataset_progress_bar.place(relx=0.5, rely=0.775, anchor=CENTER)
+        self.create_dataset_progress_bar_label_stringvar = StringVar()
+        self.create_dataset_progress_bar_label_stringvar.set("0 %")
+        self.create_dataset_progress_bar_label = ttk.Label(self.create_dataset_tab,
+                                                           textvariable=self.create_dataset_progress_bar_label_stringvar)
+        self.create_dataset_progress_bar_label.place(relx=0.5, rely=0.72, anchor=CENTER)
+        create_dataset_thread_function = partial(main, create_dataset_now=True, root_dir=self.root_dir, fruits=fruits, sample_time=sample_time,
+                                                 sample_location=sample_location,
+                                                 train_spectrum_path=train_spectrum_path,
+                                                 train_labels_path=train_labels_path,
+                                                 test_spectrum_path=test_spectrum_path,
+                                                 test_labels_path=test_labels_path,
+                                                 size_of_dataset=self.size_of_dataset,
+                                                 train_data_percentage=train_data_percentage,
+                                                 create_dataset_progress_bar_intvar=self.create_dataset_progress_bar_intvar)
+        self.create_dataset_thread = threading.Thread(target=create_dataset_thread_function)
+        self.create_dataset_thread.start()
+        self.after(50, self.update_labels_of_progress_bar, self.create_dataset_thread, self.create_dataset_progress_bar,
+                   self.create_dataset_button, self.create_dataset_progress_bar_label,
+                   self.create_dataset_progress_bar_label_stringvar, self.create_dataset_progress_bar_intvar)
+
+    def update_labels_of_progress_bar(self, thread, progress_bar, button, label, label_stringvar, progress_bar_intvar):
+        if thread.is_alive():
+            percent = (progress_bar_intvar.get() / progress_bar["maximum"]) * 100
+            label_stringvar.set("{} %".format(int(percent)))
+            self.after(1500, self.update_labels_of_progress_bar, thread, progress_bar, button, label, label_stringvar,
+                       progress_bar_intvar)
+        else:
+            label_stringvar.set("100 %")
+            messagebox.showinfo(title="Create Dataset",
+                                message="Dataset created successfully")
+            button["state"] = "normal"
+            progress_bar.destroy()
+            label.destroy()
 
     def design_predict_tab(self):
         self.tabs_in_predict_parent = ttk.Notebook(self.predict_tab)
@@ -451,6 +489,29 @@ class FinalProjectGui(Tk):
         test_labels_path = self.test_labels_path_entry.get()
         if not test_labels_path:
             illegal_inputs.append(self.test_labels_path_entry)
+
+        # check that train spectrum path is unique
+        if train_spectrum_path == train_labels_path or train_spectrum_path == test_spectrum_path or \
+           train_spectrum_path == test_labels_path:
+            if self.train_spectrum_path_entry not in illegal_inputs:
+                illegal_inputs.append(self.train_spectrum_path_entry)
+        # check that train labels path is unique
+        if train_labels_path == train_spectrum_path or train_labels_path == test_spectrum_path or \
+           train_labels_path == test_labels_path:
+            if self.train_labels_path_entry not in illegal_inputs:
+                illegal_inputs.append(self.train_labels_path_entry)
+
+        # check that test spectrum path is unique
+        if test_spectrum_path == train_labels_path or test_spectrum_path == train_spectrum_path or \
+           test_spectrum_path == test_labels_path:
+            if self.test_spectrum_path_entry not in illegal_inputs:
+                illegal_inputs.append(self.test_spectrum_path_entry)
+
+        # check that test labels path is unique
+        if test_labels_path == train_labels_path or test_labels_path == train_spectrum_path or \
+           test_labels_path == test_spectrum_path:
+            if self.test_labels_path_entry not in illegal_inputs:
+                illegal_inputs.append(self.test_labels_path_entry)
 
         size_of_dataset = self.size_of_dataset_entry.get()
         if size_of_dataset:

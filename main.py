@@ -18,7 +18,8 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
          num_channels_layer1=3, num_channels_layer2=6, sample_time="after 5", sample_location="anal", tolerance=1,
          number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8, train_now=False,
          show_statistics=True, predict_now=False, file_to_predict=r"apple neg.txt", confidence_threshold=0.7,
-         validate_hierarchy=True, validate_filename_format=True, validate_empty_file=True):
+         validate_hierarchy=True, validate_filename_format=True, validate_empty_file=True,
+         create_dataset_progress_bar_intvar=None):
 
     # create data set
     if create_dataset_now:
@@ -30,7 +31,8 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                        number_of_samples_to_alter=number_of_samples_to_alter,
                        train_spectrum_path=Path(train_spectrum_path), train_labels_path=Path(train_labels_path),
                        test_spectrum_path=Path(test_spectrum_path), test_labels_path=Path(test_labels_path),
-                       data_width=data_width, sample_time=sample_time, sample_location=sample_location)
+                       data_width=data_width, sample_time=sample_time, sample_location=sample_location,
+                       create_dataset_progress_bar_intvar=create_dataset_progress_bar_intvar)
 
     # transformation of dataset
     transform = compose(transforms.ToTensor(), minmax_scale)
@@ -76,7 +78,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                                          fruit_label_enum=fruit_label_enum, data_width=data_width,
                                          confidence_threshold=confidence_threshold)
 
-        print("Prediction: {},\tConfidence: {:.3f}%".format(prediction, confidence*100))
+        # print("Prediction: {},\tConfidence: {:.3f}%".format(prediction, confidence*100))
         return confidence, prediction
 
 
