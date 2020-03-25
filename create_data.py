@@ -88,8 +88,8 @@ def __create_train_or_test_dataset(size_of_dataset, type_of_dataset, existing_da
             save_to_file(test_spectrum_path, current_data, writing_to_file_mode)
             # save_to_file(TEST_LABEL_PATH, current_labels, writing_to_file_mode)
             save_to_file(test_labels_path, current_labels, writing_to_file_mode)
-
-        create_dataset_progress_bar_intvar.set(create_dataset_progress_bar_intvar.get() + 1000)
+        if create_dataset_progress_bar_intvar:
+            create_dataset_progress_bar_intvar.set(create_dataset_progress_bar_intvar.get() + 1000)
 
 
 def save_to_file(file, data_to_save, mode):
