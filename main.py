@@ -15,11 +15,11 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
          batch_size=20, learning_rate=0.01, num_epochs=20, kernel_size=(1, 10), padding=(1, 5), dropout=True,
          drop_prob=0.2, batch_normalization=True, weight_decay=True, weight_decay_amount=0.01, data_width=2100,
          model_save_path=r"model.pth", fruits=("apple", "banana", "mix"), create_dataset_now=False, root_dir="YOMIRAN",
-         num_channels_layer1=3, num_channels_layer2=6, sample_time="after 5", sample_location="anal", tolerance=1,
+         num_channels_layer1=3, num_channels_layer2=6, sample_time="after 5", sample_location="anal", tolerance=100,
          number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8, train_now=False,
          show_statistics=True, predict_now=False, file_to_predict=r"apple neg.txt", confidence_threshold=0.7,
          validate_hierarchy=True, validate_filename_format=True, validate_empty_file=True,
-         create_dataset_progress_bar_intvar=None):
+         create_dataset_progress_bar_intvar=None, train_dataset_size=48000):
 
     # create data set
     if create_dataset_now:
@@ -56,12 +56,13 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
         statistics = train_model(model=model, fruit_label_enum=fruit_label_enum, train_data_loader=train_data_loader,
                                  test_data_loader=test_data_loader, num_epochs=num_epochs, learning_rate=learning_rate,
                                  batch_size=batch_size, weight_decay=weight_decay,
-                                 weight_decay_amount=weight_decay_amount, model_save_path=model_save_path)
+                                 weight_decay_amount=weight_decay_amount, model_save_path=model_save_path,
+                                 train_dataset_size=train_dataset_size)
 
         losses, accuracies_train, accuracies_test = statistics
         # plot the statistics
         if show_statistics:
-            plot_train_statistics(x_values=range(len(losses)), y_values=losses, x_label="Iteration", y_label="Loss")
+            plot_train_statistics(x_values=range(len(losses)), y_values=losses, x_label="Epoch", y_label="Loss")
             plot_train_statistics(x_values=range(len(accuracies_train)), y_values=accuracies_train,
                                   x_label="Epoch", y_label="Train accuracy")
             plot_train_statistics(x_values=range(len(accuracies_test)), y_values=accuracies_test,
@@ -83,5 +84,11 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
 
 
 if __name__ == '__main__':
-    main(create_dataset_now=False, num_epochs=20, kernel_size=(2, 5), padding=(1, 5), model_save_path=r"model.pth",
-         batch_size=20, train_now=False, predict_now=True, file_to_predict="banana neg.txt")
+    main(create_dataset_now=False, num_epochs=20, kernel_size=(2, 2), padding=(1, 1),
+         model_save_path=r"model_kernel22_after58_all_batch20_epochs20.pth",
+         batch_size=20, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
+         train_spectrum_path=r"dataset/train_spectrum_after58_all.npy",
+         test_spectrum_path=r"dataset/test_spectrum_after58_all.npy",
+         train_labels_path=r"dataset/train_labels_after58_all.npy",
+         test_labels_path=r"dataset/test_labels_after58_all.npy",
+         train_dataset_size=8000)

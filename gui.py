@@ -11,7 +11,7 @@ from main import main
 MODEL_PATH = 0
 PREDICT_DATA_PATH = 1
 ROOT_DIR = 2
-DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_size": "(2, 5)", "padding": "(1, 5)",
+DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_size": "(2, 2)", "padding": "(1, 1)",
             "data_width": "2100", "number_of_channels_in_layer 1": "3", "number_of_channels_in_layer_2": "6",
             "confidence_threshold": "0.7", "root_dir": "YOMIRAN", "sample_times": ["after 5", "after 8", "before",
                                                                                    "after 5, after 8",
@@ -372,7 +372,7 @@ class FinalProjectGui(Tk):
         if thread.is_alive():
             percent = (progress_bar_intvar.get() / progress_bar["maximum"]) * 100
             label_stringvar.set("{} %".format(int(percent)))
-            self.after(1500, self.update_labels_of_progress_bar, thread, progress_bar, button, label, label_stringvar,
+            self.after(500, self.update_labels_of_progress_bar, thread, progress_bar, button, label, label_stringvar,
                        progress_bar_intvar)
         else:
             label_stringvar.set("100 %")
@@ -404,48 +404,58 @@ class FinalProjectGui(Tk):
 
     def design_predict_settings_tab(self):
         # model file
-        self.model_label_frame_in_predict = ttk.LabelFrame(self.settings_predict_tab, text="Pre-trained model file")
-        self.model_label_frame_in_predict.place(relx=0.5, rely=0.13, anchor=CENTER)
-        self.model_file_in_predict_label = ttk.Label(self.model_label_frame_in_predict, text="")
-        self.model_file_in_predict_label.grid(column=1, row=2)
+        # self.model_label_frame_in_predict = ttk.LabelFrame(self.settings_predict_tab, text="Pre-trained model file")
+        # self.model_label_frame_in_predict.place(relx=0.5, rely=0.13, anchor=CENTER)
+        self.model_frame_in_predict = ttk.Frame(self.settings_predict_tab, borderwidth=2, relief=SUNKEN)
+        self.model_frame_in_predict.place(relx=0.5, rely=0.15, anchor=CENTER)
+        self.model_file_in_predict_label = ttk.Label(self.settings_predict_tab, text="Pre-trained model file")
+        self.model_file_in_predict_label.place(relx=0.5, rely=0.08, anchor=CENTER)
+        self.model_file_in_predict_stringvar = StringVar()
+        self.model_file_in_predict_entry = Entry(self.model_frame_in_predict,
+                                                 textvariable=self.model_file_in_predict_stringvar, justify=CENTER,
+                                                 borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                                 background="white")
+        self.model_file_in_predict_entry.pack(side=RIGHT, padx=0.5, pady=1, fill=Y)
         if os.path.exists(DEFAULTS["model_path"]):
-            self.model_path = os.path.join(os.getcwd(), DEFAULTS["model_path"])
-        #     self.model_file_in_predict_label.grid(column=1, row=2)
-            self.model_file_in_predict_label.configure(text=self.model_path)
+            # self.model_path = os.path.join(os.getcwd(), DEFAULTS["model_path"])
+            self.model_file_in_predict_stringvar.set(os.path.join(os.getcwd(), DEFAULTS["model_path"]))
         model_file_dialog = partial(self.file_dialog, data_or_model_file_path=MODEL_PATH)
-        self.model_browse_button_in_predict = ttk.Button(self.model_label_frame_in_predict, text="Browse",
+        self.model_browse_button_in_predict = ttk.Button(self.model_frame_in_predict, text="Browse",
                                                          command=model_file_dialog)
-        self.model_browse_button_in_predict.grid(column=1, row=1)
+        self.model_browse_button_in_predict.pack(side=RIGHT, padx=0, pady=0, fill=Y)
+
+        # data to predict file
+        self.predict_data_file_frame_in_predict = ttk.Frame(self.settings_predict_tab, borderwidth=2, relief=SUNKEN)
+        self.predict_data_file_frame_in_predict.place(relx=0.5, rely=0.35, anchor=CENTER)
+        self.predict_data_file_in_predict_label = ttk.Label(self.settings_predict_tab, text="Data to predict file")
+        self.predict_data_file_in_predict_label.place(relx=0.5, rely=0.28, anchor=CENTER)
+        self.predict_data_file_in_predict_stringvar = StringVar()
+        self.predict_data_file_in_predict_entry = Entry(self.predict_data_file_frame_in_predict,
+                                                        textvariable=self.predict_data_file_in_predict_stringvar,
+                                                        justify=CENTER, borderwidth=0, highlightthickness=1,
+                                                        highlightbackground="grey", background="white")
+        self.predict_data_file_in_predict_entry.pack(side=RIGHT, padx=0.5, pady=1, fill=Y)
+        predict_data_file_dialog = partial(self.file_dialog, data_or_model_file_path=PREDICT_DATA_PATH)
+        self.predict_data_browse_button_in_predict = ttk.Button(self.predict_data_file_frame_in_predict, text="Browse",
+                                                                command=predict_data_file_dialog)
+        self.predict_data_browse_button_in_predict.pack(side=RIGHT, padx=0, pady=0, fill=Y)
 
         # fruits list
-        self.fruits_in_predict_label_frame = ttk.LabelFrame(self.settings_predict_tab, text="Fruits")
-        self.fruits_in_predict_label_frame.place(relx=0.5, rely=0.35, anchor=CENTER)
-        self.fruits_in_predict_label = ttk.Label(self.fruits_in_predict_label_frame,
-                                                 text="Please enter fruits (comma separated)")
-        self.fruits_in_predict_label.grid(column=1, row=1)
+        self.fruits_in_predict_label = ttk.Label(self.settings_predict_tab,
+                                                 text="Enter fruits (comma separated):")
+        self.fruits_in_predict_label.place(relx=0.3, rely=0.52, anchor=CENTER)
         validate_fruit_list_cmd = (self.register(self.validate_fruit_list))  # validate command
         self.fruit_list_stringvar = StringVar()
-        self.fruit_list_in_predict_entry = Entry(self.fruits_in_predict_label_frame, justify=CENTER,
+        self.fruit_list_in_predict_entry = Entry(self.settings_predict_tab, justify=CENTER,
                                                  borderwidth=0, highlightthickness=1, highlightbackground="grey",
                                                  textvariable=self.fruit_list_stringvar, bg="white",
                                                  validate='all', validatecommand=(validate_fruit_list_cmd, '%P'))
-        self.fruit_list_in_predict_entry.grid(column=1, row=2)
+        self.fruit_list_in_predict_entry.place(relx=0.7, rely=0.52, anchor=CENTER)
         self.validate_fruit_list(text="-1")  # hack to fill the default value
-
-        # data to predict file
-        self.predict_data_label_frame_in_predict = ttk.LabelFrame(self.settings_predict_tab,
-                                                                  text="Data to predict file")
-        self.predict_data_label_frame_in_predict.place(relx=0.5, rely=0.57, anchor=CENTER)
-        self.predict_data_in_predict_label = ttk.Label(self.predict_data_label_frame_in_predict, text="")
-        self.predict_data_in_predict_label.grid(column=1, row=2)
-        predict_data_file_dialog = partial(self.file_dialog, data_or_model_file_path=PREDICT_DATA_PATH)
-        self.predict_data_browse_button_in_predict = ttk.Button(self.predict_data_label_frame_in_predict, text="Browse",
-                                                                command=predict_data_file_dialog)
-        self.predict_data_browse_button_in_predict.grid(column=1, row=1)
 
         # confidence threshold
         self.confidence_threshold_label = ttk.Label(self.settings_predict_tab, text="Confidence threshold:")
-        self.confidence_threshold_label.place(relx=0.3, rely=0.75, anchor=CENTER)
+        self.confidence_threshold_label.place(relx=0.3, rely=0.68, anchor=CENTER)
         validate_confidence_threshold_cmd = (self.register(self.validate_confidence_threshold))  # validate command
         self.confidence_threshold_stringvar = StringVar()
         self.confidence_threshold_entry = Entry(self.settings_predict_tab, justify=CENTER,
@@ -453,7 +463,7 @@ class FinalProjectGui(Tk):
                                                 textvariable=self.confidence_threshold_stringvar, bg="white",
                                                 validate='all',
                                                 validatecommand=(validate_confidence_threshold_cmd, '%P'))
-        self.confidence_threshold_entry.place(relx=0.7, rely=0.75, anchor=CENTER)
+        self.confidence_threshold_entry.place(relx=0.7, rely=0.68, anchor=CENTER)
         self.validate_confidence_threshold(text="-1")  # hack to fill the default value
 
     def flash_widget(self, widget, bg_color_to_flash="indian red", prev_bg_color="white", count=0):
@@ -550,24 +560,25 @@ class FinalProjectGui(Tk):
         if not confidence_threshold:
             illegal_inputs.append(self.confidence_threshold_entry)
 
-        try:
-            predict_data_path = self.predict_data_path
-        except AttributeError:
-            predict_data_path = ""
-            illegal_inputs.append(self.predict_data_in_predict_label)
-        if not os.path.exists(predict_data_path):
-            illegal_inputs.append(self.predict_data_in_predict_label)
+        # try:
+        predict_data_path = self.predict_data_file_in_predict_entry.get()
+        # except AttributeError:
+        if predict_data_path == "":
+            illegal_inputs.append(self.predict_data_file_in_predict_entry)
+        if not os.path.exists(predict_data_path) and self.predict_data_file_in_predict_entry not in illegal_inputs:
+            illegal_inputs.append(self.predict_data_file_in_predict_entry)
 
-        try:
-            model_path = self.model_path
-        except AttributeError:
-            model_path = ""
-            illegal_inputs.append(self.model_file_in_predict_label)
-        if not os.path.exists(model_path):
-            illegal_inputs.append(self.model_file_in_predict_label)
+        # try:
+        model_path = self.model_file_in_predict_stringvar.get()
+            # model_path = self.model_path
+        # except AttributeError:
+        if model_path == "":
+            illegal_inputs.append(self.model_file_in_predict_entry)
+        if not os.path.exists(model_path) and self.model_file_in_predict_entry not in illegal_inputs:
+            illegal_inputs.append(self.model_file_in_predict_entry)
 
-        for illegal_input in illegal_inputs:
-            illegal_input.configure(text="Browse file")
+        # for illegal_input in illegal_inputs:
+        #     illegal_input.configure(text="Browse file")
         for illegal_input in illegal_inputs:
             self.flash_widget(illegal_input)
 
@@ -587,9 +598,11 @@ class FinalProjectGui(Tk):
 
         padding_left, padding_right = self.padding.split(",")
         padding = (int(padding_left.strip(" (")), int(padding_right.strip(" )")))
+        predict_path = self.predict_data_file_in_predict_stringvar.get()
+        model_path = self.model_file_in_predict_stringvar.get()
 
-        confidence, prediction = main(predict_now=True, file_to_predict=self.predict_data_path,
-                                      model_save_path=self.model_path, fruits=fruits,
+        confidence, prediction = main(predict_now=True, file_to_predict=predict_path,
+                                      model_save_path=model_path, fruits=fruits,
                                       confidence_threshold=confidence_threshold, kernel_size=kernel_size,
                                       padding=padding)
 
@@ -602,17 +615,16 @@ class FinalProjectGui(Tk):
             filename = filedialog.askopenfilename(initialdir="./", title="Select model file",
                                                   filetype=(("pth files", "*.pth"), ("all files", "*.*")))
             if filename != "":  # The user didn't pick anything
-                self.model_path = filename
-                # self.model_file_in_predict_label.grid(column=1, row=2)
-                self.model_file_in_predict_label.configure(text=filename)
+                # self.model_path = filename
+                self.model_file_in_predict_stringvar.set(filename)
 
         elif data_or_model_file_path == PREDICT_DATA_PATH:
             filename = filedialog.askopenfilename(initialdir="./", title="Select data file",
                                                   filetype=(("txt files", "*.txt"), ("all files", "*.*")))
             if filename != "":  # The user didn't pick anything
-                self.predict_data_path = filename
-                # self.predict_data_in_predict_label.grid(column=1, row=3)
-                self.predict_data_in_predict_label.configure(text=filename)
+                # self.predict_data_path = filename
+                self.predict_data_file_in_predict_stringvar.set(filename)
+                # self.predict_data_in_predict_label.configure(text=filename)
 
         elif data_or_model_file_path == ROOT_DIR:
             root_dir = filedialog.askdirectory(initialdir="./", title="Select folder containing all data set")

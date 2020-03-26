@@ -147,7 +147,7 @@ def get_accuracy(epoch, model, batch_size, data_loader, fruit_label_enum):
 
 def train_model(model, fruit_label_enum, train_data_loader, test_data_loader, num_epochs=50,
                 learning_rate=0.01, batch_size=20, weight_decay=False, weight_decay_amount=0.01,
-                model_save_path="model.pth"):
+                model_save_path="model.pth", train_dataset_size=60000):
     """Trains a neural network"""
 
     # specify loss function (categorial cross entropy)
@@ -189,10 +189,11 @@ def train_model(model, fruit_label_enum, train_data_loader, test_data_loader, nu
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-            losses.append(loss.data.item())
+            # losses.append(loss.data.item())
             train_loss += loss.item() * spectrum.size(0)
 
-        train_loss /= TRAIN_DATASET_SIZE
+        train_loss /= train_dataset_size
+        losses.append(train_loss)
         elapsed_time = time.time() - start_time
         # Log to screen
         print("Epoch: {}/{} \tTraining loss: {:.6f} \tTrain accuracy: {:.6f}% \tTest accuracy: {:.6f}%\t"
