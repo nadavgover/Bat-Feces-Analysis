@@ -84,11 +84,11 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
 
 
 if __name__ == '__main__':
-    main(create_dataset_now=False, num_epochs=20, kernel_size=(2, 2), padding=(1, 1),
-         model_save_path=r"model_kernel22_after58_all_batch20_epochs20.pth",
-         batch_size=20, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
-         train_spectrum_path=r"dataset/train_spectrum_after58_all.npy",
-         test_spectrum_path=r"dataset/test_spectrum_after58_all.npy",
-         train_labels_path=r"dataset/train_labels_after58_all.npy",
-         test_labels_path=r"dataset/test_labels_after58_all.npy",
+    main(create_dataset_now=False, num_epochs=15, kernel_size=(2, 2), padding=(1, 1),
+         model_save_path=r"trained_models/model_kernel22_after5_anal_batch50_epochs15_data10000.pth",
+         batch_size=50, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
+         train_spectrum_path=r"dataset/train_spectrum_after5_anal_10000.npy",
+         test_spectrum_path=r"dataset/test_spectrum_after5_anal_10000.npy",
+         train_labels_path=r"dataset/train_labels_after5_anal_10000.npy",
+         test_labels_path=r"dataset/test_labels_after5_anal_10000.npy",
          train_dataset_size=8000)
