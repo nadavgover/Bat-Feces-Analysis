@@ -11,7 +11,7 @@ from main import main
 MODEL_PATH = 0
 PREDICT_DATA_PATH = 1
 ROOT_DIR = 2
-DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_size": "(2, 2)", "padding": "(1, 1)",
+DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_size": "(2, 5)", "padding": "(1, 1)",
             "data_width": "2100", "number_of_channels_in_layer 1": "3", "number_of_channels_in_layer_2": "6",
             "confidence_threshold": "0.7", "root_dir": "YOMIRAN", "sample_times": ["after 5", "after 8", "before",
                                                                                    "after 5, after 8",
@@ -322,19 +322,31 @@ class FinalProjectGui(Tk):
 
         train_spectrum_path = self.train_spectrum_path_entry.get()
         train_spectrum_path = "".join([train_spectrum_path, ".npy"])
-        train_spectrum_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], train_spectrum_path)
+        if create_dataset_folder:
+            train_spectrum_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], train_spectrum_path)
+        else:
+            train_spectrum_path = os.path.join(os.getcwd(), train_spectrum_path)
 
         train_labels_path = self.train_labels_path_entry.get()
         train_labels_path = "".join([train_labels_path, ".npy"])
-        train_labels_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], train_labels_path)
+        if create_dataset_folder:
+            train_labels_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], train_labels_path)
+        else:
+            train_labels_path = os.path.join(os.getcwd(), train_labels_path)
 
         test_spectrum_path = self.test_spectrum_path_entry.get()
         test_spectrum_path = "".join([test_spectrum_path, ".npy"])
-        test_spectrum_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], test_spectrum_path)
+        if create_dataset_folder:
+            test_spectrum_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], test_spectrum_path)
+        else:
+            test_spectrum_path = os.path.join(os.getcwd(), test_spectrum_path)
 
         test_labels_path = self.test_labels_path_entry.get()
         test_labels_path = "".join([test_labels_path, ".npy"])
-        test_labels_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], test_labels_path)
+        if create_dataset_folder:
+            test_labels_path = os.path.join(os.getcwd(), DEFAULTS["dataset_folder_name"], test_labels_path)
+        else:
+            test_labels_path = os.path.join(os.getcwd(), test_labels_path)
 
         self.size_of_dataset = int(self.size_of_dataset_entry.get())
         train_data_percentage = float(self.train_data_percentage_entry.get())
