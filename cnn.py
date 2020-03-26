@@ -5,10 +5,9 @@ import torchvision.transforms as transforms
 from sklearn.preprocessing import minmax_scale
 from torch.autograd import Variable
 import numpy as np
-# import enum
 import functools
 import time
-# import itertools
+from scipy.interpolate import make_interp_spline, BSpline
 
 from data_loader import DataLoader
 from fruit_label_enum import create_fruit_labels
@@ -213,8 +212,13 @@ def train_model(model, fruit_label_enum, train_data_loader, test_data_loader, nu
     return losses, accuracies_train, accuracies_test
 
 
-def plot_train_statistics(x_values, y_values, x_label, y_label, show_plot=False):
+def plot_train_statistics(x_values, y_values, x_label, y_label, show_plot=False, interpolate_spline=True):
     fig, ax = plt.subplots()
+    if interpolate_spline:
+        x_smooth = np.linspace(min(x_values), max(x_values), 300)
+        spline = make_interp_spline(x_values, y_values, k=3)  # type: BSpline
+        y_values = spline(x_smooth)
+        x_values = x_smooth
     ax.plot(x_values, y_values)
     # ax.legend(legend_label)
     ax.set_xlabel(x_label)
