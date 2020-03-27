@@ -12,15 +12,15 @@ MODEL_PATH = 0
 PREDICT_DATA_PATH = 1
 ROOT_DIR = 2
 DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_size": "(2, 2)", "padding": "(1, 1)",
-            "data_width": "2100", "number_of_channels_in_layer 1": "3", "number_of_channels_in_layer_2": "6",
-            "confidence_threshold": "0.7", "root_dir": "YOMIRAN", "sample_times": ["after 5", "after 8", "before",
-                                                                                   "after 5, after 8",
-                                                                                   "after 5, before",
-                                                                                   "after 8, before", "all"],
+            "data_width": "2100", "confidence_threshold": "0.7", "root_dir": "YOMIRAN",
+            "sample_times": ["after 5", "after 8", "before", "after 5, after 8", "after 5, before",
+                             "after 8, before", "all"],
             "sample_locations": ["anal", "oral", "all"], "train_spectrum_path": "train_spectrum",
             "test_spectrum_path": "test_spectrum", "train_labels_path": "train_labels",
             "test_labels_path": "test_labels", "dataset_size": "60000", "train_data_percentage": "0.8",
-            "dataset_folder_name": "dataset"}
+            "dataset_folder_name": "dataset", "fc1_amount_output_nodes": "1000", "fc2_amount_output_nodes": "500",
+            "fc3_amount_output_nodes": "100", "num_channels_layer1": "3", "num_channels_layer2": "6",
+            "batch_normalization": "True"}
 
 
 class ToolTip(object):
@@ -73,8 +73,8 @@ class FinalProjectGui(Tk):
         self.maxsize(400, 400)
         self.wm_iconbitmap('bat.ico')
 
-        self.kernel_size = DEFAULTS["kernel_size"]
-        self.padding = DEFAULTS["padding"]
+        # self.kernel_size = DEFAULTS["kernel_size"]
+        # self.padding = DEFAULTS["padding"]
         # self.confidence_threshold = DEFAULTS["confidence_threshold"]
         self.tooltip_icon = PhotoImage(file="tooltip-black-16x16.png")
 
@@ -412,7 +412,166 @@ class FinalProjectGui(Tk):
         self.predict_button.place(relx=0.5, rely=0.90, anchor=CENTER)
 
     def design_predict_advanced_tab(self):
-        pass
+        # batch normalization
+        self.check_button_batch_norm_in_predict_intvar = IntVar()
+        self.check_button_batch_norm_in_predict_intvar.set(1)
+        self.check_button_batch_norm_in_predict = ttk.Checkbutton(self.advanced_predict_tab,
+                                                                  text="Batch normalization",
+                                                                  variable=self.check_button_batch_norm_in_predict_intvar)
+        self.check_button_batch_norm_in_predict.place(relx=0.237, rely=0.07, anchor=CENTER)
+        # batch normalization tooltip
+        self.check_button_batch_norm_in_predict_tooltip = ttk.Label(self.advanced_predict_tab)
+        self.check_button_batch_norm_in_predict_tooltip.image = self.tooltip_icon
+        self.check_button_batch_norm_in_predict_tooltip["image"] = self.check_button_batch_norm_in_predict_tooltip.image
+        self.check_button_batch_norm_in_predict_tooltip.place(relx=0.04, rely=0.07, anchor=CENTER)
+        create_tooltip(widget=self.check_button_batch_norm_in_predict_tooltip, text="Check this if the model was "
+                                                                                    "trained with batch normalization")
+
+        # kernel size
+        self.kernel_size_in_predict_label = ttk.Label(self.advanced_predict_tab, text="Kernel size: ")
+        self.kernel_size_in_predict_label.place(relx=0.156, rely=0.15, anchor=CENTER)
+        self.kernel_size_in_predict_stringvar = StringVar()
+        self.kernel_size_in_predict_stringvar.set(DEFAULTS["kernel_size"])
+        self.kernel_size_in_predict_entry = Entry(self.advanced_predict_tab, justify=CENTER,
+                                                  borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                                  textvariable=self.kernel_size_in_predict_stringvar, bg="white")
+        self.kernel_size_in_predict_entry.place(relx=0.685, rely=0.15, anchor=CENTER)
+        # kernel size tooltip
+        self.kernel_size_in_predict_tooltip = ttk.Label(self.advanced_predict_tab)
+        self.kernel_size_in_predict_tooltip.image = self.tooltip_icon
+        self.kernel_size_in_predict_tooltip["image"] = self.kernel_size_in_predict_tooltip.image
+        self.kernel_size_in_predict_tooltip.place(relx=0.04, rely=0.15, anchor=CENTER)
+        create_tooltip(widget=self.kernel_size_in_predict_tooltip, text="Kernel size used while training the model.\n"
+                                                                        "Expecting two natural numbers, surrounded with"
+                                                                        " parenthesis, separated with a comma.")
+
+        # padding
+        self.padding_in_predict_label = ttk.Label(self.advanced_predict_tab, text="Padding: ")
+        self.padding_in_predict_label.place(relx=0.144, rely=0.23, anchor=CENTER)
+        self.padding_in_predict_stringvar = StringVar()
+        self.padding_in_predict_stringvar.set(DEFAULTS["padding"])
+        self.padding_in_predict_entry = Entry(self.advanced_predict_tab, justify=CENTER,
+                                              borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                              textvariable=self.padding_in_predict_stringvar, bg="white")
+        self.padding_in_predict_entry.place(relx=0.685, rely=0.23, anchor=CENTER)
+        # padding tooltip
+        self.padding_in_predict_tooltip = ttk.Label(self.advanced_predict_tab)
+        self.padding_in_predict_tooltip.image = self.tooltip_icon
+        self.padding_in_predict_tooltip["image"] = self.padding_in_predict_tooltip.image
+        self.padding_in_predict_tooltip.place(relx=0.04, rely=0.23, anchor=CENTER)
+        create_tooltip(widget=self.padding_in_predict_tooltip, text="Padding used while training the model.\n"
+                                                                    "Expecting two natural numbers, surrounded with "
+                                                                    "parenthesis, separated with a comma.")
+
+        # num channels layer 1
+        self.num_channels_layer1_in_predict_label = ttk.Label(self.advanced_predict_tab, text="Number of channels in "
+                                                                                              "layer 1: ")
+        self.num_channels_layer1_in_predict_label.place(relx=0.287, rely=0.31, anchor=CENTER)
+        self.num_channels_layer1_in_predict_stringvar = StringVar()
+        self.num_channels_layer1_in_predict_stringvar.set(DEFAULTS["num_channels_layer1"])
+        self.num_channels_layer1_in_predict_entry = Entry(self.advanced_predict_tab, justify=CENTER,
+                                                          borderwidth=0, highlightthickness=1,
+                                                          highlightbackground="grey",
+                                                          textvariable=self.num_channels_layer1_in_predict_stringvar,
+                                                          bg="white")
+        self.num_channels_layer1_in_predict_entry.place(relx=0.685, rely=0.31, anchor=CENTER)
+        # num channels layer 1 tooltip
+        self.num_channels_layer1_in_predict_tooltip = ttk.Label(self.advanced_predict_tab)
+        self.num_channels_layer1_in_predict_tooltip.image = self.tooltip_icon
+        self.num_channels_layer1_in_predict_tooltip["image"] = self.num_channels_layer1_in_predict_tooltip.image
+        self.num_channels_layer1_in_predict_tooltip.place(relx=0.04, rely=0.31, anchor=CENTER)
+        create_tooltip(widget=self.num_channels_layer1_in_predict_tooltip, text="Number of channels in layer 1 used "
+                                                                                "while training the model.\n"
+                                                                                "Layer 1 is a convolutional layer.\n"
+                                                                                "Expecting natural number.")
+
+        # num channels layer 2
+        self.num_channels_layer2_in_predict_label = ttk.Label(self.advanced_predict_tab, text="Number of channels in "
+                                                                                              "layer 2: ")
+        self.num_channels_layer2_in_predict_label.place(relx=0.287, rely=0.39, anchor=CENTER)
+        self.num_channels_layer2_in_predict_stringvar = StringVar()
+        self.num_channels_layer2_in_predict_stringvar.set(DEFAULTS["num_channels_layer2"])
+        self.num_channels_layer2_in_predict_entry = Entry(self.advanced_predict_tab, justify=CENTER,
+                                                          borderwidth=0, highlightthickness=1,
+                                                          highlightbackground="grey",
+                                                          textvariable=self.num_channels_layer2_in_predict_stringvar,
+                                                          bg="white")
+        self.num_channels_layer2_in_predict_entry.place(relx=0.685, rely=0.39, anchor=CENTER)
+        # num channels layer 2 tooltip
+        self.num_channels_layer2_in_predict_tooltip = ttk.Label(self.advanced_predict_tab)
+        self.num_channels_layer2_in_predict_tooltip.image = self.tooltip_icon
+        self.num_channels_layer2_in_predict_tooltip["image"] = self.num_channels_layer2_in_predict_tooltip.image
+        self.num_channels_layer2_in_predict_tooltip.place(relx=0.04, rely=0.39, anchor=CENTER)
+        create_tooltip(widget=self.num_channels_layer2_in_predict_tooltip, text="Number of channels in layer 2 used "
+                                                                                "while training the model.\n"
+                                                                                "Layer 2 is a convolutional layer.\n"
+                                                                                "Expecting a natural number.")
+
+        # amount output nodes fc1
+        self.num_output_nodes_fc1_in_predict_label = ttk.Label(self.advanced_predict_tab, text="Number of output nodes "
+                                                                                               "layer 3: ")
+        self.num_output_nodes_fc1_in_predict_label.place(relx=0.298, rely=0.47, anchor=CENTER)
+        self.num_output_nodes_fc1_in_predict_stringvar = StringVar()
+        self.num_output_nodes_fc1_in_predict_stringvar.set(DEFAULTS["fc1_amount_output_nodes"])
+        self.num_output_nodes_fc1_in_predict_entry = Entry(self.advanced_predict_tab, justify=CENTER,
+                                                           borderwidth=0, highlightthickness=1,
+                                                           highlightbackground="grey",
+                                                           textvariable=self.num_output_nodes_fc1_in_predict_stringvar,
+                                                           bg="white")
+        self.num_output_nodes_fc1_in_predict_entry.place(relx=0.685, rely=0.47, anchor=CENTER)
+        # amount output nodes fc1 tooltip
+        self.num_output_nodes_fc1_in_predict_tooltip = ttk.Label(self.advanced_predict_tab)
+        self.num_output_nodes_fc1_in_predict_tooltip.image = self.tooltip_icon
+        self.num_output_nodes_fc1_in_predict_tooltip["image"] = self.num_output_nodes_fc1_in_predict_tooltip.image
+        self.num_output_nodes_fc1_in_predict_tooltip.place(relx=0.04, rely=0.47, anchor=CENTER)
+        create_tooltip(widget=self.num_output_nodes_fc1_in_predict_tooltip, text="Number of output nodes in layer 3 "
+                                                                                 "used while training the model.\n"
+                                                                                 "Layer 3 is a fully connected layer.\n"
+                                                                                 "Expecting a natural number.")
+
+        # amount output nodes fc2
+        self.num_output_nodes_fc2_in_predict_label = ttk.Label(self.advanced_predict_tab, text="Number of output nodes "
+                                                                                               "layer 4: ")
+        self.num_output_nodes_fc2_in_predict_label.place(relx=0.298, rely=0.55, anchor=CENTER)
+        self.num_output_nodes_fc2_in_predict_stringvar = StringVar()
+        self.num_output_nodes_fc2_in_predict_stringvar.set(DEFAULTS["fc2_amount_output_nodes"])
+        self.num_output_nodes_fc2_in_predict_entry = Entry(self.advanced_predict_tab, justify=CENTER,
+                                                           borderwidth=0, highlightthickness=1,
+                                                           highlightbackground="grey",
+                                                           textvariable=self.num_output_nodes_fc2_in_predict_stringvar,
+                                                           bg="white")
+        self.num_output_nodes_fc2_in_predict_entry.place(relx=0.685, rely=0.55, anchor=CENTER)
+        # amount output nodes fc2 tooltip
+        self.num_output_nodes_fc2_in_predict_tooltip = ttk.Label(self.advanced_predict_tab)
+        self.num_output_nodes_fc2_in_predict_tooltip.image = self.tooltip_icon
+        self.num_output_nodes_fc2_in_predict_tooltip["image"] = self.num_output_nodes_fc2_in_predict_tooltip.image
+        self.num_output_nodes_fc2_in_predict_tooltip.place(relx=0.04, rely=0.55, anchor=CENTER)
+        create_tooltip(widget=self.num_output_nodes_fc2_in_predict_tooltip, text="Number of output nodes in layer 4 "
+                                                                                 "used while training the model.\n"
+                                                                                 "Layer 4 is a fully connected layer.\n"
+                                                                                 "Expecting a natural number.")
+
+        # amount output nodes fc3
+        self.num_output_nodes_fc3_in_predict_label = ttk.Label(self.advanced_predict_tab, text="Number of output nodes "
+                                                                                               "layer 5: ")
+        self.num_output_nodes_fc3_in_predict_label.place(relx=0.298, rely=0.63, anchor=CENTER)
+        self.num_output_nodes_fc3_in_predict_stringvar = StringVar()
+        self.num_output_nodes_fc3_in_predict_stringvar.set(DEFAULTS["fc3_amount_output_nodes"])
+        self.num_output_nodes_fc3_in_predict_entry = Entry(self.advanced_predict_tab, justify=CENTER,
+                                                           borderwidth=0, highlightthickness=1,
+                                                           highlightbackground="grey",
+                                                           textvariable=self.num_output_nodes_fc3_in_predict_stringvar,
+                                                           bg="white")
+        self.num_output_nodes_fc3_in_predict_entry.place(relx=0.685, rely=0.63, anchor=CENTER)
+        # amount output nodes fc3 tooltip
+        self.num_output_nodes_fc3_in_predict_tooltip = ttk.Label(self.advanced_predict_tab)
+        self.num_output_nodes_fc3_in_predict_tooltip.image = self.tooltip_icon
+        self.num_output_nodes_fc3_in_predict_tooltip["image"] = self.num_output_nodes_fc3_in_predict_tooltip.image
+        self.num_output_nodes_fc3_in_predict_tooltip.place(relx=0.04, rely=0.63, anchor=CENTER)
+        create_tooltip(widget=self.num_output_nodes_fc3_in_predict_tooltip, text="Number of output nodes in layer 5 "
+                                                                                 "used while training the model.\n"
+                                                                                 "Layer 5 is a fully connected layer.\n"
+                                                                                 "Expecting a natural number.")
 
     def design_predict_settings_tab(self):
         # model file
@@ -605,18 +764,32 @@ class FinalProjectGui(Tk):
 
         confidence_threshold = float(self.confidence_threshold_entry.get())
 
-        kernel_size_left, kernel_size_right = self.kernel_size.split(",")
+        kernel_size_left, kernel_size_right = self.kernel_size_in_predict_stringvar.get().split(",")
         kernel_size = (int(kernel_size_left.strip(" (")), int(kernel_size_right.strip(" )")))
 
-        padding_left, padding_right = self.padding.split(",")
+        padding_left, padding_right = self.padding_in_predict_stringvar.get().split(",")
         padding = (int(padding_left.strip(" (")), int(padding_right.strip(" )")))
+
+        num_channels_layer1 = int(self.num_channels_layer1_in_predict_stringvar.get())
+        num_channels_layer2 = int(self.num_channels_layer2_in_predict_stringvar.get())
+
+        num_output_nodes_fc1 = int(self.num_output_nodes_fc1_in_predict_stringvar.get())
+        num_output_nodes_fc2 = int(self.num_output_nodes_fc2_in_predict_stringvar.get())
+        num_output_nodes_fc3 = int(self.num_output_nodes_fc3_in_predict_stringvar.get())
+
+        batch_normalization = bool(self.check_button_batch_norm_in_predict_intvar.get())
+
         predict_path = self.predict_data_file_in_predict_stringvar.get()
         model_path = self.model_file_in_predict_stringvar.get()
 
         confidence, prediction = main(predict_now=True, file_to_predict=predict_path,
-                                      model_save_path=model_path, fruits=fruits,
-                                      confidence_threshold=confidence_threshold, kernel_size=kernel_size,
-                                      padding=padding)
+                                      batch_normalization=batch_normalization, model_save_path=model_path,
+                                      fruits=fruits, confidence_threshold=confidence_threshold, kernel_size=kernel_size,
+                                      padding=padding, num_channels_layer1=num_channels_layer1,
+                                      num_channels_layer2=num_channels_layer2,
+                                      fc1_amount_output_nodes=num_output_nodes_fc1,
+                                      fc2_amount_output_nodes=num_output_nodes_fc2,
+                                      fc3_amount_output_node=num_output_nodes_fc3)
 
         messagebox.showinfo(title="Prediction",
                             message="Prediction: {}\tConfidence: {:.3f}%".format(prediction, confidence*100))
@@ -625,14 +798,14 @@ class FinalProjectGui(Tk):
 
         if data_or_model_file_path == MODEL_PATH:
             filename = filedialog.askopenfilename(initialdir="./", title="Select model file",
-                                                  filetype=(("pth files", "*.pth"), ("all files", "*.*")))
+                                                  filetype=(("model files", "*.pth"), ("all files", "*.*")))
             if filename != "":  # The user didn't pick anything
                 # self.model_path = filename
                 self.model_file_in_predict_stringvar.set(filename)
 
         elif data_or_model_file_path == PREDICT_DATA_PATH:
             filename = filedialog.askopenfilename(initialdir="./", title="Select data file",
-                                                  filetype=(("txt files", "*.txt"), ("all files", "*.*")))
+                                                  filetype=(("data files", "*.txt"), ("all files", "*.*")))
             if filename != "":  # The user didn't pick anything
                 # self.predict_data_path = filename
                 self.predict_data_file_in_predict_stringvar.set(filename)

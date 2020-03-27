@@ -19,7 +19,8 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
          number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8, train_now=False,
          show_statistics=True, predict_now=False, file_to_predict=r"apple neg.txt", confidence_threshold=0.7,
          validate_hierarchy=True, validate_filename_format=True, validate_empty_file=True,
-         create_dataset_progress_bar_intvar=None, train_dataset_size=48000):
+         create_dataset_progress_bar_intvar=None, train_dataset_size=48000, fc1_amount_output_nodes=1000,
+         fc2_amount_output_nodes=500, fc3_amount_output_node=100):
 
     # create data set
     if create_dataset_now:
@@ -50,7 +51,9 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
         # initialize the neural net
         model = CNN(amount_of_labels=len(fruit_label_enum), batch_normalization=batch_normalization, dropout=dropout,
                     drop_prob=drop_prob, kernel_size=kernel_size, padding=padding, data_width=data_width, data_height=2,
-                    num_channels_layer1=num_channels_layer1, num_channels_layer2=num_channels_layer2)
+                    num_channels_layer1=num_channels_layer1, num_channels_layer2=num_channels_layer2,
+                    fc1_amount_output_nodes=fc1_amount_output_nodes, fc2_amount_output_nodes=fc2_amount_output_nodes,
+                    fc3_amount_output_node=fc3_amount_output_node)
 
         # train the model
         statistics = train_model(model=model, fruit_label_enum=fruit_label_enum, train_data_loader=train_data_loader,
@@ -73,7 +76,9 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                            batch_normalization=batch_normalization, dropout=dropout,
                            drop_prob=drop_prob, kernel_size=kernel_size, padding=padding, data_width=data_width,
                            data_height=2, num_channels_layer1=num_channels_layer1,
-                           num_channels_layer2=num_channels_layer2)
+                           num_channels_layer2=num_channels_layer2, fc1_amount_output_nodes=fc1_amount_output_nodes,
+                           fc2_amount_output_nodes=fc2_amount_output_nodes,
+                           fc3_amount_output_node=fc3_amount_output_node)
 
         confidence, prediction = predict(model=model, data_file=file_to_predict, transform=transform,
                                          fruit_label_enum=fruit_label_enum, data_width=data_width,
