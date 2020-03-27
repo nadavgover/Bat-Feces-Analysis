@@ -11,7 +11,7 @@ from main import main
 MODEL_PATH = 0
 PREDICT_DATA_PATH = 1
 ROOT_DIR = 2
-DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_size": "(2, 5)", "padding": "(1, 1)",
+DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_size": "(2, 2)", "padding": "(1, 1)",
             "data_width": "2100", "number_of_channels_in_layer 1": "3", "number_of_channels_in_layer_2": "6",
             "confidence_threshold": "0.7", "root_dir": "YOMIRAN", "sample_times": ["after 5", "after 8", "before",
                                                                                    "after 5, after 8",
