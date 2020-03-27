@@ -15,7 +15,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
          batch_size=20, learning_rate=0.01, num_epochs=20, kernel_size=(1, 10), padding=(1, 5), dropout=True,
          drop_prob=0.2, batch_normalization=True, weight_decay=True, weight_decay_amount=0.01, data_width=2100,
          model_save_path=r"model.pth", fruits=("apple", "banana", "mix"), create_dataset_now=False, root_dir="YOMIRAN",
-         num_channels_layer1=3, num_channels_layer2=6, sample_time="after 5", sample_location="anal", tolerance=100,
+         num_channels_layer1=3, num_channels_layer2=6, sample_time="after 5", sample_location="anal", tolerance=5,
          number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8, train_now=False,
          show_statistics=True, predict_now=False, file_to_predict=r"apple neg.txt", confidence_threshold=0.7,
          validate_hierarchy=True, validate_filename_format=True, validate_empty_file=True,
