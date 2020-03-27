@@ -56,7 +56,8 @@ def calculate_output_shape(layer_name, h_in, w_in, kernel_size=(1, 10), padding=
 
 class CNN(nn.Module):
     def __init__(self, batch_normalization=True, dropout=True, drop_prob=0.3, kernel_size=(1, 10), padding=(1, 5),
-                 amount_of_labels=3, data_width=2100, data_height=2, num_channels_layer1=3, num_channels_layer2=6):
+                 amount_of_labels=3, data_width=2100, data_height=2, num_channels_layer1=3, num_channels_layer2=6,
+                 fc1_amount_output_nodes=1000, fc2_amount_output_nodes=500, fc3_amount_output_node=100):
 
         super(CNN, self).__init__()
         if batch_normalization:
@@ -102,10 +103,10 @@ class CNN(nn.Module):
         h_out, w_out = data_shape_layer2_after_maxpool
 
         # fully connected layer
-        self.fc1 = nn.Linear(h_out * w_out * num_channels_layer2, 1000)
-        self.fc2 = nn.Linear(1000, 500)
-        self.fc3 = nn.Linear(500, 100)
-        self.fc4 = nn.Linear(100, amount_of_labels)
+        self.fc1 = nn.Linear(h_out * w_out * num_channels_layer2, fc1_amount_output_nodes)
+        self.fc2 = nn.Linear(fc1_amount_output_nodes, fc2_amount_output_nodes)
+        self.fc3 = nn.Linear(fc2_amount_output_nodes, fc3_amount_output_node)
+        self.fc4 = nn.Linear(fc3_amount_output_node, amount_of_labels)
 
     def forward(self, x):
         out = self.layer1(x)
