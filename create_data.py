@@ -16,26 +16,43 @@ def create_dataset(data_files, fruits=("apple", "banana", "mix"), sample_time="a
                    tolerance=1, number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8,
                    train_spectrum_path=Path("dataset/train_spectrum.npy"), train_labels_path=Path("dataset/train_labels.npy"),
                    test_spectrum_path=Path("dataset/test_spectrum.npy"), test_labels_path=Path("dataset/test_labels.npy"),
-                   data_width=2100, create_dataset_progress_bar_intvar=None):
+                   data_width=2100, stretch_data=False, create_dataset_progress_bar_intvar=None):
 
     # Get existing data
     existing_data, existing_labels = __get_existing_data(fruits=fruits, data_files=data_files, sample_time=sample_time,
                                                          sample_location=sample_location, data_width=data_width)
 
-    train_dataset_size = int(size_of_dataset * train_data_percentage)
-    test_dataset_size = size_of_dataset - train_dataset_size
+    if stretch_data:
+        train_dataset_size = int(size_of_dataset * train_data_percentage)
+        test_dataset_size = size_of_dataset - train_dataset_size
 
-    # Create train and test dataset. Existing data will be part of the train dataset
-    for type_of_dataset, dataset_size in zip(["train", "test"], [train_dataset_size, test_dataset_size]):
+        # Create train and test dataset. Existing data will be part of the train dataset
+        for type_of_dataset, dataset_size in zip(["train", "test"], [train_dataset_size, test_dataset_size]):
 
-        __create_train_or_test_dataset(size_of_dataset=dataset_size, type_of_dataset=type_of_dataset,
-                                       existing_data=existing_data, existing_labels=existing_labels,
-                                       tolerance=tolerance, number_of_samples_to_alter=number_of_samples_to_alter,
-                                       train_spectrum_path=train_spectrum_path, train_labels_path=train_labels_path,
-                                       test_spectrum_path=test_spectrum_path, test_labels_path=test_labels_path,
-                                       data_width=data_width,
-                                       create_dataset_progress_bar_intvar=create_dataset_progress_bar_intvar)
+            __create_train_or_test_dataset(size_of_dataset=dataset_size, type_of_dataset=type_of_dataset,
+                                           existing_data=existing_data, existing_labels=existing_labels,
+                                           tolerance=tolerance, number_of_samples_to_alter=number_of_samples_to_alter,
+                                           train_spectrum_path=train_spectrum_path, train_labels_path=train_labels_path,
+                                           test_spectrum_path=test_spectrum_path, test_labels_path=test_labels_path,
+                                           data_width=data_width,
+                                           create_dataset_progress_bar_intvar=create_dataset_progress_bar_intvar)
 
+    else:  # do not stretch data (do not create more data from existing data)
+        train_dataset_size = int(train_data_percentage * existing_data.shape[0])
+        indices_of_train = random.sample(range(existing_data.shape[0]), train_dataset_size)
+        indices_of_test = [i for i in range(existing_data.shape[0]) if i not in indices_of_train]
+
+        # getting the data from the existing data
+        train_data = existing_data[indices_of_train]
+        train_labels = existing_labels[indices_of_train]
+        test_data = existing_data[indices_of_test]
+        test_labels = existing_labels[indices_of_test]
+
+        # saving the data to the corresponding file
+        save_to_file(file=train_spectrum_path, data_to_save=train_data, mode="wb")
+        save_to_file(file=train_labels_path, data_to_save=train_labels, mode="wb")
+        save_to_file(file=test_spectrum_path, data_to_save=test_data, mode="wb")
+        save_to_file(file=test_labels_path, data_to_save=test_labels, mode="wb")
     return True
 
 
@@ -78,15 +95,11 @@ def __create_train_or_test_dataset(size_of_dataset, type_of_dataset, existing_da
             writing_to_file_mode = "ab"
 
         if type_of_dataset == "train":
-            # save_to_file(TRAIN_DATA_PATH, current_data, writing_to_file_mode)
             save_to_file(train_spectrum_path, current_data, writing_to_file_mode)
-            # save_to_file(TRAIN_LABELS_PATH, current_labels, writing_to_file_mode)
             save_to_file(train_labels_path, current_labels, writing_to_file_mode)
 
         else:  # if type_of_dataset == "test"
-            # save_to_file(TEST_DATA_PATH, current_data, writing_to_file_mode)
             save_to_file(test_spectrum_path, current_data, writing_to_file_mode)
-            # save_to_file(TEST_LABEL_PATH, current_labels, writing_to_file_mode)
             save_to_file(test_labels_path, current_labels, writing_to_file_mode)
         if create_dataset_progress_bar_intvar:
             create_dataset_progress_bar_intvar.set(create_dataset_progress_bar_intvar.get() + 1000)
@@ -145,7 +158,7 @@ def __get_existing_data(data_files, data_width=2100, fruits=("apple", "banana", 
                 if sample_location.lower() not in data_file.lower():
                     continue
 
-        label = get_label(file_path=data_file, fruits=fruits)
+        label = __get_label(file_path=data_file, fruits=fruits)
         if label == "Unknown fruit":
             continue
 
@@ -201,12 +214,14 @@ def __create_random_data_from_existing_data(existing_data, existing_labels, amou
     return randomized_data, randomized_labels
 
 
-def get_label(file_path, fruits):
+def __get_label(file_path, fruits):
     """Get the label of the data from the file name.
     Assuming file directory hierarchy.
     If hierarchy is not expected, just check if the filename contains a fruit name"""
     try:
         root, name, fruit, location, time, filename = r"{}".format(file_path).split("\\")
+        if fruit.lower() not in fruits:
+            return "Unknown fruit"
         return fruit.lower()
     except ValueError:
         for fruit in fruits:
@@ -217,10 +232,14 @@ def get_label(file_path, fruits):
 
 
 if __name__ == '__main__':
-    create_now = False
-    fruits = ("apple", "banana", "mix")
+    create_now = True
+    fruits = ("apple", "banana")
     if create_now:
         valid_files, _ = get_valid_and_invalid_files(root_dir="YOMIRAN", validate_hierarchy=True,
                                                      validate_filename_format=True, validate_empty_file=True)
         create_dataset(data_files=valid_files, fruits=fruits, size_of_dataset=60000, train_data_percentage=0.8,
-                       tolerance=1, number_of_samples_to_alter=100, sample_time=["after 5", "after 8"])
+                       tolerance=1, number_of_samples_to_alter=100, sample_time="after 5",
+                       stretch_data=False, train_spectrum_path=Path("train_spectrum_stam.npy"),
+                       train_labels_path=Path("train_labels_stam.npy"),
+                       test_spectrum_path=Path("test_spectrum_stam.npy"),
+                       test_labels_path=Path("test_labels_stam.npy"))

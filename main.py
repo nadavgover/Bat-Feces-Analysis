@@ -20,7 +20,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
          show_statistics=True, predict_now=False, file_to_predict=r"apple neg.txt", confidence_threshold=0.7,
          validate_hierarchy=True, validate_filename_format=True, validate_empty_file=True,
          create_dataset_progress_bar_intvar=None, train_dataset_size=48000, fc1_amount_output_nodes=1000,
-         fc2_amount_output_nodes=500, fc3_amount_output_node=100):
+         fc2_amount_output_nodes=500, fc3_amount_output_node=100, stretch_data=True):
 
     # create data set
     if create_dataset_now:
@@ -33,7 +33,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                        train_spectrum_path=Path(train_spectrum_path), train_labels_path=Path(train_labels_path),
                        test_spectrum_path=Path(test_spectrum_path), test_labels_path=Path(test_labels_path),
                        data_width=data_width, sample_time=sample_time, sample_location=sample_location,
-                       create_dataset_progress_bar_intvar=create_dataset_progress_bar_intvar)
+                       create_dataset_progress_bar_intvar=create_dataset_progress_bar_intvar, stretch_data=stretch_data)
 
     # transformation of dataset
     transform = compose(transforms.ToTensor(), minmax_scale)
@@ -89,11 +89,18 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
 
 
 if __name__ == '__main__':
-    main(create_dataset_now=False, num_epochs=15, kernel_size=(2, 2), padding=(1, 1),
-         model_save_path=r"trained_models/model_kernel22_after5_anal_batch50_epochs15_data10000.pth",
-         batch_size=50, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
-         train_spectrum_path=r"dataset/train_spectrum_after5_anal_10000.npy",
-         test_spectrum_path=r"dataset/test_spectrum_after5_anal_10000.npy",
-         train_labels_path=r"dataset/train_labels_after5_anal_10000.npy",
-         test_labels_path=r"dataset/test_labels_after5_anal_10000.npy",
-         train_dataset_size=8000)
+    train_spectrum_path = r"dataset/train_spectrum_apple_banana_original_size.npy"
+    test_spectrum_path = r"dataset/test_spectrum_apple_banana_original_size.npy"
+    train_labels_path = r"dataset/train_labels_apple_banana_original_size.npy"
+    test_labels_path = r"dataset/test_labels_apple_banana_original_size.npy"
+    fruits = ["apple", "banana"]
+    # train_spectrum_path = r"dataset/train_spectrum_after5_anal_data_original.npy"
+    # test_spectrum_path = r"dataset/test_spectrum_after5_anal_data_original.npy"
+    # train_labels_path = r"dataset/train_labels_after5_anal_data_original.npy"
+    # test_labels_path = r"dataset/test_labels_after5_anal_data_original.npy"
+    main(create_dataset_now=True, num_epochs=50, kernel_size=(2, 2), padding=(1, 1),
+         model_save_path=r"trained_models/model_kernel22_after5_anal_batch1_epochs50_data_apple_banana_original_size.pth",
+         batch_size=1, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
+         train_spectrum_path=train_spectrum_path, test_spectrum_path=test_spectrum_path,
+         train_labels_path=train_labels_path, test_labels_path=test_labels_path,
+         train_dataset_size=8000, stretch_data=False, sample_location="anal", sample_time="after 5", fruits=fruits)
