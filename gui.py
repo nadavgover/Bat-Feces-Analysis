@@ -17,7 +17,7 @@ DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_s
                              "after 8, before", "all"],
             "sample_locations": ["anal", "oral", "all"], "train_spectrum_path": "train_spectrum",
             "test_spectrum_path": "test_spectrum", "train_labels_path": "train_labels",
-            "test_labels_path": "test_labels", "dataset_size": "60000", "train_data_percentage": "0.8",
+            "test_labels_path": "test_labels", "dataset_size": "10000", "train_data_percentage": "0.8",
             "dataset_folder_name": "dataset", "fc1_amount_output_nodes": "1000", "fc2_amount_output_nodes": "500",
             "fc3_amount_output_nodes": "100", "num_channels_layer1": "3", "num_channels_layer2": "6",
             "batch_normalization": "True"}

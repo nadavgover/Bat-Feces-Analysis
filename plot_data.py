@@ -29,11 +29,14 @@ def plot_graph(data, legend_label, show_plot=False):
         plt.show()
 
 if __name__ == '__main__':
-    apple_file = r"apple pos.txt"
-    banana_file = r"banana pos.txt"
+    apple_file = r"C:\Users\Nadav\Desktop\12_Kai\Apple\Anal\After 5\YY20-173 neg.txt"
+    banana_file = r"C:\Users\Nadav\Desktop\12_Kai\Banana\Anal\After 5\YY20-085 neg.txt"
+    mix_file = r"C:\Users\Nadav\Desktop\12_Kai\Mix\Anal\After 5\YY20-245 neg.txt"
     apple_data_read = read_data(apple_file)
     banana_data_read = read_data(banana_file)
+    mix_data_read = read_data(mix_file)
     plot_graph(apple_data_read, ["Apple"])
     plot_graph(banana_data_read, ["Banana"])
-    plot_on_same_graph([apple_data_read, banana_data_read], ["Apple", "Banana"])
+    plot_graph(mix_data_read, ["Mix"])
+    plot_on_same_graph([apple_data_read, banana_data_read, mix_data_read], ["Apple", "Banana", "Mix"])
     plt.show()
