@@ -14,3 +14,5 @@ if __name__ == '__main__':
 
     # example of converting enum value to name
     print(FruitLabel(0).name)
+    # example of converting enum name to value
+    print(FruitLabel["banana"].value)
