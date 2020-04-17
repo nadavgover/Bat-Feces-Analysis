@@ -79,14 +79,10 @@ def compose(*functions):
 
 if __name__ == '__main__':
     batch_size = 10
-    # train_spectrum_path = r"dataset/train_spectrum_after5_anal_data_original.npy"
-    # test_spectrum_path = r"dataset/test_spectrum_after5_anal_data_original.npy"
-    # train_labels_path = r"dataset/train_labels_after5_anal_data_original.npy"
-    # test_labels_path = r"dataset/test_labels_after5_anal_data_original.npy"
-    train_spectrum_path = "train_spectrum_stam.npy"
-    test_spectrum_path = "test_spectrum_stam.npy"
-    train_labels_path = "train_labels_stam.npy"
-    test_labels_path = "test_labels_stam.npy"
+    train_spectrum_path = r"dataset/train_spectrum_after5_anal_data_original.npy"
+    test_spectrum_path = r"dataset/test_spectrum_after5_anal_data_original.npy"
+    train_labels_path = r"dataset/train_labels_after5_anal_data_original.npy"
+    test_labels_path = r"dataset/test_labels_after5_anal_data_original.npy"
 
     transform = compose(transforms.ToTensor(), minmax_scale)
     train_data_loader = DataLoader("train", train_spectrum_path=train_spectrum_path, train_labels_path=train_labels_path,
