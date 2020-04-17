@@ -1,6 +1,7 @@
 from pathlib import Path
 import torchvision.transforms as transforms
 from sklearn.preprocessing import minmax_scale
+import copy
 
 from validate_data import get_valid_and_invalid_files
 from create_data import create_dataset
@@ -20,7 +21,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
          number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8, train_now=False,
          show_statistics=True, predict_now=False, file_to_predict=r"apple neg.txt", confidence_threshold=0.7,
          validate_hierarchy=True, validate_filename_format=True, validate_empty_file=True,
-         create_dataset_progress_bar_intvar=None, train_dataset_size=48000, fc1_amount_output_nodes=1000,
+         create_dataset_progress_bar_intvar=None, fc1_amount_output_nodes=1000,
          fc2_amount_output_nodes=500, fc3_amount_output_node=100, stretch_data=True):
 
     # create data set
@@ -49,6 +50,11 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
         test_data_loader = DataLoader("test", test_spectrum_path=test_spectrum_path, test_labels_path=test_labels_path,
                                       batch_size=batch_size, transform=transform)
 
+        train_data_loader_size_calculator = copy.deepcopy(train_data_loader)
+        amount_train_data = 0
+        for spectrum, labels in train_data_loader_size_calculator.load_data():
+            amount_train_data += spectrum.shape[0]
+
         # initialize the neural net
         model = CNN(amount_of_labels=len(fruit_label_enum), batch_normalization=batch_normalization, dropout=dropout,
                     drop_prob=drop_prob, kernel_size=kernel_size, padding=padding, data_width=data_width, data_height=2,
@@ -61,17 +67,20 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                                  test_data_loader=test_data_loader, num_epochs=num_epochs, learning_rate=learning_rate,
                                  batch_size=batch_size, weight_decay=weight_decay,
                                  weight_decay_amount=weight_decay_amount, model_save_path=model_save_path,
-                                 train_dataset_size=train_dataset_size)
+                                 train_dataset_size=amount_train_data)
 
         losses, accuracies_train, accuracies_test, true_labels, predictions_of_last_epoch = statistics
         # plot the statistics
         if show_statistics:
-            plot_data.plot_train_statistics(x_values=range(len(losses)), y_values=losses, x_label="Epoch",
-                                            y_label="Loss")
-            plot_data.plot_train_statistics(x_values=range(len(accuracies_train)), y_values=accuracies_train,
-                                            x_label="Epoch", y_label="Train accuracy")
-            plot_data.plot_train_statistics(x_values=range(len(accuracies_test)), y_values=accuracies_test,
-                                            x_label="Epoch", y_label="Test accuracy")
+            # plot_data.plot_train_statistics(x_values=range(len(losses)), y_values=losses, x_label="Epoch",
+            #                                 y_label="Loss")
+            # plot_data.plot_train_statistics(x_values=range(len(accuracies_train)), y_values=accuracies_train,
+            #                                 x_label="Epoch", y_label="Train accuracy")
+            # plot_data.plot_train_statistics(x_values=range(len(accuracies_test)), y_values=accuracies_test,
+            #                                 x_label="Epoch", y_label="Test accuracy")
+
+            plot_data.plot_train_statistics1(losses=losses, train_accuracy=accuracies_train,
+                                             test_accuracy=accuracies_test)
 
             plot_data.plot_confusion_matrix(true_labels=true_labels, predictions=predictions_of_last_epoch,
                                             fruits=fruits, show_null_values=True)
@@ -104,13 +113,17 @@ if __name__ == '__main__':
     # test_spectrum_path = r"dataset/test_spectrum_after5_anal_data_original.npy"
     # train_labels_path = r"dataset/train_labels_after5_anal_data_original.npy"
     # test_labels_path = r"dataset/test_labels_after5_anal_data_original.npy"
-    train_spectrum_path = r"dataset/train_spectrum_after5_anal_10000.npy"
-    test_spectrum_path = r"dataset/test_spectrum_after5_anal_10000.npy"
-    train_labels_path = r"dataset/train_labels_after5_anal_10000.npy"
-    test_labels_path = r"dataset/test_labels_after5_anal_10000.npy"
-    main(create_dataset_now=False, num_epochs=15, kernel_size=(2, 2), padding=(1, 1),
-         model_save_path=r"trained_models/model_kernel22_after5_anal_batch50_epochs15_data10000.pth",
-         batch_size=50, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
+    # train_spectrum_path = r"dataset/train_spectrum_after5_anal_10000.npy"
+    # test_spectrum_path = r"dataset/test_spectrum_after5_anal_10000.npy"
+    # train_labels_path = r"dataset/train_labels_after5_anal_10000.npy"
+    # test_labels_path = r"dataset/test_labels_after5_anal_10000.npy"
+    train_spectrum_path = r"dataset/train_spectrum_after5_anal_5000.npy"
+    test_spectrum_path = r"dataset/test_spectrum_after5_anal_5000.npy"
+    train_labels_path = r"dataset/train_labels_after5_anal_5000.npy"
+    test_labels_path = r"dataset/test_labels_after5_anal_5000.npy"
+    main(create_dataset_now=False, num_epochs=15, kernel_size=(2, 2), padding=(1, 1), size_of_dataset=5000,
+         model_save_path=r"trained_models/model_kernel22_after5_anal_batch20_epochs15_data_5000.pth",
+         batch_size=20, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
          train_spectrum_path=train_spectrum_path, test_spectrum_path=test_spectrum_path,
          train_labels_path=train_labels_path, test_labels_path=test_labels_path,
-         train_dataset_size=8000, stretch_data=False, sample_location="anal", sample_time="after 5", fruits=fruits)
+         stretch_data=True, sample_location="anal", sample_time="after 5", fruits=fruits)

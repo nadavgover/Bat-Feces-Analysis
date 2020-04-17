@@ -4,10 +4,49 @@ import sklearn.metrics as sk_metrics
 import pandas as pd
 import numpy as np
 import string
-import seaborn as sn
+import seaborn as sns
 from scipy.interpolate import make_interp_spline, BSpline
+import copy
 
 from common import read_data
+
+sns.set(palette='Set2', style="ticks")
+
+
+def plot_raw_data1(data_files, labels, color_palette="Set2", max_weight=None, facet_grid=True):
+    x_data = []
+    y_data = []
+    classes = []
+    for data_file, label in zip(data_files, labels):
+        data_read = read_data(filename=data_file)
+        if max_weight:
+            max_weight_index = next(x for x, val in enumerate(data_read["x"]) if val > max_weight) - 1
+        else:
+            max_weight_index = len(data_read["x"])
+        cur_x_data = data_read["x"][:max_weight_index]
+        cur_y_data = data_read["y"][:max_weight_index]
+        amount_of_points = len(cur_x_data)
+        cur_labels = copy.deepcopy([label.capitalize()] * amount_of_points)
+        x_data.extend(cur_x_data)
+        y_data.extend(cur_y_data)
+        classes.extend(cur_labels)
+
+    data_dict = {"Molecular Weight": x_data, "Intensity": y_data, "Fruit": classes}
+    data_df = pd.DataFrame(data=data_dict)
+
+    # plot all on same graph
+    sns.lmplot(x="Molecular Weight", y="Intensity", data=data_df, fit_reg=False, hue='Fruit', legend=True,
+               legend_out=False, palette=color_palette, scatter_kws={"s": 7})
+
+    if facet_grid:
+        g = sns.FacetGrid(data_df, col="Fruit", hue="Fruit")
+        g = (g.map(plt.scatter, "Molecular Weight", "Intensity", s=7))
+
+    # Move the legend to an empty part of the plot
+    # plt.legend(loc='upper right')
+
+def plot_violin_plot_of_all_data(root_dir="YOMIRAN"):
+    pass
 
 
 def plot_raw_data_on_same_graph(datas, legend_labels, show_plot=False):
@@ -171,7 +210,7 @@ def __config_cell_text_and_colors(array_df, line, col, text, posi, fontsize, pre
 
 
 def plot_confusion_matrix(true_labels, predictions, fruits=None, annotate=True, cmap="Oranges", precision=".2f",
-                          font_size=11, line_width=0.5, colorbar=False, figsize=(9, 9), show_null_values=False,
+                          font_size=11, line_width=0.5, colorbar=False, figsize=(7, 7), show_null_values=False,
                           prediction_axis="y", insert_totals=True, title="Confusion matrix", show_plot=False):
 
     # Get the confusion matrix data frame
@@ -191,8 +230,8 @@ def plot_confusion_matrix(true_labels, predictions, fruits=None, annotate=True, 
     fig = plt.figure(figsize=figsize)
     ax = fig.gca()  # get current axis
 
-    ax = sn.heatmap(df_confusion_matrix, annot=annotate, annot_kws={"size": font_size}, linewidths=line_width, ax=ax,
-                    cbar=colorbar, cmap=cmap, fmt=precision)
+    ax = sns.heatmap(df_confusion_matrix, annot=annotate, annot_kws={"size": font_size}, linewidths=line_width, ax=ax,
+                     cbar=colorbar, cmap=cmap, fmt=precision)
 
     # set tick labels rotation
     ax.set_xticklabels(ax.get_xticklabels(), rotation=45, fontsize=10)
@@ -248,7 +287,7 @@ def plot_confusion_matrix(true_labels, predictions, fruits=None, annotate=True, 
 
 
 def plot_classification_report(true_labels, predictions, bar_width=0.25, title="Classification Report",
-                               show_plot=False):
+                               show_plot=False, palette="Set2"):
     report = sk_metrics.classification_report(true_labels, predictions)
     report_splitted = report.split("\n")
 
@@ -283,9 +322,10 @@ def plot_classification_report(true_labels, predictions, bar_width=0.25, title="
     ax = fig.gca()  # get current axis
 
     # Make the plot
-    ax.bar(r1, precision_bars, color='#7f6d5f', width=bar_width, edgecolor='white', label='precision')
-    ax.bar(r2, recall_bars, color='#557f2d', width=bar_width, edgecolor='white', label='recall')
-    ax.bar(r3, f_measure_bars, color='#2d7f5e', width=bar_width, edgecolor='white', label='F-measure')
+    palette = plt.get_cmap(palette)
+    ax.bar(r1, precision_bars, color=palette(0), width=bar_width, edgecolor='white', label='precision')
+    ax.bar(r2, recall_bars, color=palette(1), width=bar_width, edgecolor='white', label='recall')
+    ax.bar(r3, f_measure_bars, color=palette(2), width=bar_width, edgecolor='white', label='F-measure')
 
     # Add xticks on the middle of the group bars
     ax.set_xlabel('Accuracy: {:.2f}%'.format(accuracy * 100), fontweight='bold')
@@ -299,6 +339,36 @@ def plot_classification_report(true_labels, predictions, bar_width=0.25, title="
     ax.legend()
     if show_plot:
         plt.show()
+
+
+def __create_spline(data_to_convert_to_spline):
+    x_values = range(len(data_to_convert_to_spline))
+    y_values = data_to_convert_to_spline
+    x_smooth = np.linspace(min(x_values), max(x_values), 300)
+    spline = make_interp_spline(x_values, y_values, k=3)  # type: BSpline
+    y_values = spline(x_smooth)
+    x_values = x_smooth
+    return x_values, y_values
+
+
+def plot_train_statistics1(losses, train_accuracy, test_accuracy):
+    fig, axs = plt.subplots(nrows=3, ncols=1)
+    # plt.subplot(nrows=1, ncols=3, index=0)
+    palette = plt.get_cmap('Set2')
+
+    statistics = [losses, train_accuracy, test_accuracy]
+    y_labels = ["Loss", "Train Accuracy", "Test Accuracy"]
+    for i, stat, y_label in zip(range(len(statistics)), statistics, y_labels):
+        cur_ax = axs[i]
+        cur_ax.plot(range(len(stat)), stat, marker="", color=palette(i), linewidth=1, alpha=0.4)
+        # cur_ax.tick_params(direction="in")
+        cur_ax.set_xlabel("Epoch")
+        cur_ax.set_ylabel(y_label)
+        # cur_ax.set_title(y_label, color=palette(i))
+        x_spline, y_spline = __create_spline(stat)
+        cur_ax.plot(x_spline, y_spline, marker="", color=palette(i), linewidth=2.4, alpha=0.9)
+
+    plt.suptitle("Train Statistics")
 
 
 def plot_train_statistics(x_values, y_values, x_label, y_label, show_plot=False, interpolate_spline=True):
@@ -320,11 +390,16 @@ if __name__ == '__main__':
     # plot raw data
     apple_file = r"C:\Users\Nadav\Desktop\12_Kai\Apple\Anal\After 5\YY20-173 neg.txt"
     banana_file = r"C:\Users\Nadav\Desktop\12_Kai\Banana\Anal\After 5\YY20-085 neg.txt"
-    apple_data_read = read_data(apple_file)
-    banana_data_read = read_data(banana_file)
-    plot_raw_data(apple_data_read, ["Apple"])
-    plot_raw_data(banana_data_read, ["Banana"])
-    plot_raw_data_on_same_graph([apple_data_read, banana_data_read], ["Apple", "Banana"])
+    mix_file = r"C:\Users\Nadav\Desktop\12_Kai\Mix\Anal\After 5\YY20-245 neg.txt"
+    # apple_data_read = read_data(apple_file)
+    # banana_data_read = read_data(banana_file)
+    # plot_raw_data(apple_data_read, ["Apple"])
+    # plot_raw_data(banana_data_read, ["Banana"])
+    # plot_raw_data_on_same_graph([apple_data_read, banana_data_read], ["Apple", "Banana"])
+    # plot_raw_data1(data_files=[apple_file], labels=["apple"])
+    # plot_raw_data1(data_files=[banana_file], labels=["banana"])
+    # plot_raw_data1(data_files=[mix_file], labels=["mix"])
+    plot_raw_data1(data_files=[apple_file, banana_file, mix_file], labels=["apple", "banana", "mix"], max_weight=800)
 
     # plot confusion matrix
     true_labels = np.array(
