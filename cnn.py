@@ -1,5 +1,4 @@
 import torch
-import matplotlib.pyplot as plt
 import torch.nn as nn
 import torchvision.transforms as transforms
 from sklearn.preprocessing import minmax_scale
@@ -7,7 +6,7 @@ from torch.autograd import Variable
 import numpy as np
 import functools
 import time
-from scipy.interpolate import make_interp_spline, BSpline
+
 
 from data_loader import DataLoader
 from fruit_label_enum import create_fruit_labels
@@ -125,24 +124,43 @@ class CNN(nn.Module):
         return out
 
 
-def get_accuracy(epoch, model, batch_size, data_loader, fruit_label_enum):
+def get_accuracy_labels_vs_predicted(epoch, model, batch_size, data_loader, fruit_label_enum,
+                                     get_labels_predictions=False):
     correct = 0.0
     total = 0.0
-    i = epoch * batch_size
-    for spectrum, labels in data_loader.load_data():
+    # i = epoch * batch_size
+    all_true_labels = None
+    all_predictions = None
+    for spectrum, labels_np_string in data_loader.load_data():
         spectrum = Variable(spectrum.float())
         # convert string representation of labels to int
-        for fruit in fruit_label_enum:
-            labels = np.where(labels == fruit.name, fruit.value, labels)
+        labels = np.array([fruit_label_enum[label].value for label in labels_np_string])
+        # for fruit in fruit_label_enum:
+        #     labels = np.where(labels_np_string == fruit.name, fruit.value, labels)
         labels = torch.from_numpy(labels.astype(np.longlong))
 
         outputs = model(spectrum)
         _, predicted = torch.max(outputs.data, 1)
+
         total += labels.size(0)
         correct += (predicted == labels).sum()
-        if i == (epoch+1) * batch_size:
-            break
-    return (100 * correct / total).item()
+        # if i == (epoch+1) * batch_size:
+        #     break
+        if get_labels_predictions:
+            if all_true_labels is None:
+                all_true_labels = labels_np_string
+            else:
+                all_true_labels = np.hstack((all_true_labels, labels_np_string))
+
+            predicted_np = predicted.numpy()
+            predicted_np_string = [fruit_label_enum(prediction).name for prediction in predicted_np]
+            if all_predictions is None:
+                all_predictions = predicted_np_string
+            else:
+                all_predictions = np.hstack((all_predictions, predicted_np_string))
+    accuracy = (100 * correct / total).item()
+
+    return accuracy, all_true_labels, all_predictions
 
 
 def train_model(model, fruit_label_enum, train_data_loader, test_data_loader, num_epochs=50,
@@ -168,10 +186,20 @@ def train_model(model, fruit_label_enum, train_data_loader, test_data_loader, nu
         start_time = time.time()
         train_loss = 0.0
         model.eval()  # set parameters for testing
-        accuracies_train.append(get_accuracy(epoch=epoch, data_loader=train_data_loader, model=model,
-                                             batch_size=batch_size, fruit_label_enum=fruit_label_enum))
-        accuracies_test.append(get_accuracy(epoch=epoch, data_loader=test_data_loader, model=model,
-                                            batch_size=batch_size, fruit_label_enum=fruit_label_enum))
+        accuracies_train.append(get_accuracy_labels_vs_predicted(epoch=epoch, data_loader=train_data_loader, model=model,
+                                                                 batch_size=batch_size,
+                                                                 fruit_label_enum=fruit_label_enum)[0])
+        accuracies_test.append(get_accuracy_labels_vs_predicted(epoch=epoch, data_loader=test_data_loader, model=model,
+                                                                batch_size=batch_size,
+                                                                fruit_label_enum=fruit_label_enum)[0])
+
+        if epoch == num_epochs - 1:
+            _, true_labels, predictions_of_last_epoch = get_accuracy_labels_vs_predicted(epoch=epoch,
+                                                                                         data_loader=test_data_loader,
+                                                                                         model=model,
+                                                                                         batch_size=batch_size,
+                                                                                         fruit_label_enum=fruit_label_enum,
+                                                                                         get_labels_predictions=True)
 
         model.train()  # set parameters for training
         for i, (spectrum, labels) in enumerate(train_data_loader.load_data()):
@@ -200,32 +228,12 @@ def train_model(model, fruit_label_enum, train_data_loader, test_data_loader, nu
               "Epoch time (minutes): {:.2f}".format(
                epoch + 1, num_epochs, train_loss, accuracies_train[-1], accuracies_test[-1], elapsed_time / 60))
 
-    # plot_train_statistics(x_values=range(len(losses)), y_values=losses, x_label="Iteration", y_label="Loss")
-    # plot_train_statistics(x_values=range(len(accuracies_train)), y_values=accuracies_train,
-    #            x_label="Epoch", y_label="Train accuracy")
-    # plot_train_statistics(x_values=range(len(accuracies_test)), y_values=accuracies_test,
-    #            x_label="Epoch", y_label="Train accuracy", show_plot=True)
-
     # Save the model
     torch.save(model.state_dict(), model_save_path)
 
     # return the statistics
-    return losses, accuracies_train, accuracies_test
+    return losses, accuracies_train, accuracies_test, true_labels, predictions_of_last_epoch
 
-
-def plot_train_statistics(x_values, y_values, x_label, y_label, show_plot=False, interpolate_spline=True):
-    fig, ax = plt.subplots()
-    if interpolate_spline:
-        x_smooth = np.linspace(min(x_values), max(x_values), 300)
-        spline = make_interp_spline(x_values, y_values, k=3)  # type: BSpline
-        y_values = spline(x_smooth)
-        x_values = x_smooth
-    ax.plot(x_values, y_values)
-    # ax.legend(legend_label)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    if show_plot:
-        plt.show()
 
 if __name__ == '__main__':
     # Hyper parameters
@@ -250,13 +258,11 @@ if __name__ == '__main__':
     test_data_loader = DataLoader("test", test_spectrum_path=test_spectrum_path, test_labels_path=test_labels_path,
                                   batch_size=BATCH_SIZE, transform=transform)
 
-    # Get the dataset
-    # transform = compose(transforms.ToTensor(), minmax_scale)
-    # train_data_loader = DataLoader("train", batch_size=BATCH_SIZE, transform=transform)
-    # test_data_loader = DataLoader("test", batch_size=BATCH_SIZE, transform=transform)
+    # instantiate model
+    model = CNN()
 
     # train
     statistics = train_model(train_data_loader=train_data_loader, test_data_loader=test_data_loader,
                              num_epochs=NUM_EPOCHS, learning_rate=LEARNING_RATE, batch_size=BATCH_SIZE,
                              weight_decay=True, model_save_path=MODEL_SAVE_PATH,
-                             fruit_label_enum=create_fruit_labels())
+                             fruit_label_enum=create_fruit_labels(), model=model)
