@@ -5,7 +5,8 @@ from sklearn.preprocessing import minmax_scale
 from validate_data import get_valid_and_invalid_files
 from create_data import create_dataset
 from data_loader import DataLoader
-from cnn import compose, train_model, CNN, plot_train_statistics
+from cnn import compose, train_model, CNN
+import plot_data
 from fruit_label_enum import create_fruit_labels
 from predict import load_model, predict
 
@@ -62,14 +63,20 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                                  weight_decay_amount=weight_decay_amount, model_save_path=model_save_path,
                                  train_dataset_size=train_dataset_size)
 
-        losses, accuracies_train, accuracies_test = statistics
+        losses, accuracies_train, accuracies_test, true_labels, predictions_of_last_epoch = statistics
         # plot the statistics
         if show_statistics:
-            plot_train_statistics(x_values=range(len(losses)), y_values=losses, x_label="Epoch", y_label="Loss")
-            plot_train_statistics(x_values=range(len(accuracies_train)), y_values=accuracies_train,
-                                  x_label="Epoch", y_label="Train accuracy")
-            plot_train_statistics(x_values=range(len(accuracies_test)), y_values=accuracies_test,
-                                  x_label="Epoch", y_label="Test accuracy", show_plot=True)
+            plot_data.plot_train_statistics(x_values=range(len(losses)), y_values=losses, x_label="Epoch",
+                                            y_label="Loss")
+            plot_data.plot_train_statistics(x_values=range(len(accuracies_train)), y_values=accuracies_train,
+                                            x_label="Epoch", y_label="Train accuracy")
+            plot_data.plot_train_statistics(x_values=range(len(accuracies_test)), y_values=accuracies_test,
+                                            x_label="Epoch", y_label="Test accuracy")
+
+            plot_data.plot_confusion_matrix(true_labels=true_labels, predictions=predictions_of_last_epoch,
+                                            fruits=fruits, show_null_values=True)
+            plot_data.plot_classification_report(true_labels=true_labels, predictions=predictions_of_last_epoch,
+                                                 show_plot=True)
 
     if predict_now:
         model = load_model(model_save_path, amount_of_labels=len(fruit_label_enum),
@@ -84,23 +91,26 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                                          fruit_label_enum=fruit_label_enum, data_width=data_width,
                                          confidence_threshold=confidence_threshold)
 
-        # print("Prediction: {},\tConfidence: {:.3f}%".format(prediction, confidence*100))
         return confidence, prediction
 
 
 if __name__ == '__main__':
-    train_spectrum_path = r"dataset/train_spectrum_apple_banana_original_size.npy"
-    test_spectrum_path = r"dataset/test_spectrum_apple_banana_original_size.npy"
-    train_labels_path = r"dataset/train_labels_apple_banana_original_size.npy"
-    test_labels_path = r"dataset/test_labels_apple_banana_original_size.npy"
-    fruits = ["apple", "banana"]
+    # train_spectrum_path = r"dataset/train_spectrum_apple_banana_original_size.npy"
+    # test_spectrum_path = r"dataset/test_spectrum_apple_banana_original_size.npy"
+    # train_labels_path = r"dataset/train_labels_apple_banana_original_size.npy"
+    # test_labels_path = r"dataset/test_labels_apple_banana_original_size.npy"
+    fruits = ["apple", "banana", "mix"]
     # train_spectrum_path = r"dataset/train_spectrum_after5_anal_data_original.npy"
     # test_spectrum_path = r"dataset/test_spectrum_after5_anal_data_original.npy"
     # train_labels_path = r"dataset/train_labels_after5_anal_data_original.npy"
     # test_labels_path = r"dataset/test_labels_after5_anal_data_original.npy"
-    main(create_dataset_now=True, num_epochs=50, kernel_size=(2, 2), padding=(1, 1),
-         model_save_path=r"trained_models/model_kernel22_after5_anal_batch1_epochs50_data_apple_banana_original_size.pth",
-         batch_size=1, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
+    train_spectrum_path = r"dataset/train_spectrum_after5_anal_10000.npy"
+    test_spectrum_path = r"dataset/test_spectrum_after5_anal_10000.npy"
+    train_labels_path = r"dataset/train_labels_after5_anal_10000.npy"
+    test_labels_path = r"dataset/test_labels_after5_anal_10000.npy"
+    main(create_dataset_now=False, num_epochs=15, kernel_size=(2, 2), padding=(1, 1),
+         model_save_path=r"trained_models/model_kernel22_after5_anal_batch50_epochs15_data10000.pth",
+         batch_size=50, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
          train_spectrum_path=train_spectrum_path, test_spectrum_path=test_spectrum_path,
          train_labels_path=train_labels_path, test_labels_path=test_labels_path,
          train_dataset_size=8000, stretch_data=False, sample_location="anal", sample_time="after 5", fruits=fruits)
