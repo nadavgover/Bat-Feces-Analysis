@@ -3,10 +3,46 @@ import torchvision.transforms as transforms
 from sklearn.preprocessing import minmax_scale
 from torch.autograd import Variable
 import numpy as np
+import data_loader
 
 from cnn import CNN, compose
 from common import read_data
 from fruit_label_enum import create_fruit_labels
+
+
+def predict_test_dataset(model, fruit_label_enum=create_fruit_labels(fruits=("apple", "banana", "mix"))):
+    test_spectrum_path = r"dataset/test_spectrum_after5_anal_5000.npy"
+    test_labels_path = r"dataset/test_labels_after5_anal_5000.npy"
+    test_data_loader = data_loader.DataLoader("test", test_spectrum_path=test_spectrum_path,
+                                              test_labels_path=test_labels_path, batch_size=1, transform=transform)
+
+    for spectrum, labels in test_data_loader.load_data():
+        # convert string representation of labels to int
+        labels = np.array([fruit_label_enum[label].value for label in labels])
+        data_to_predict = spectrum
+        amount_of_data = 1
+        if transform:
+            data_to_predict = np.reshape(data_to_predict, (-1, 1))
+            data_to_predict = transform(data_to_predict).reshape(amount_of_data, 1, 2, -1)
+        else:
+            data_to_predict = torch.from_numpy(data_to_predict.reshape(amount_of_data, 1, 2, -1))
+
+        for spectrum in data_to_predict:
+            # if transform:
+            #     spectrum = transform(spectrum).reshape(1, 1, 2, -1)
+            # else:
+            spectrum = spectrum.view(1, 1, 2, -1)
+
+            # Run the spectrum through the model
+            outputs = model(Variable(spectrum.float()))
+
+            # Brings us probabilities
+            outputs = torch.nn.functional.softmax(outputs, dim=1)
+
+            # Get prediction and the confidence (probability) by taking the maximal value of the outputs
+            confidence, prediction = torch.max(outputs.data, 1)
+            if prediction != labels[0]:
+                print("False prediction")
 
 
 def predict(model, data_file, transform=None, fruit_label_enum=create_fruit_labels(fruits=("apple", "banana", "mix")),
@@ -75,15 +111,14 @@ if __name__ == '__main__':
     BATCH_SIZE = 20
     LEARNING_RATE = 0.01
     NUM_EPOCHS = 20
-    KERNEL_SIZE = (1, 10)
-    PADDING = (1, 5)
+    KERNEL_SIZE = (2, 2)
+    PADDING = (1, 1)
     DROP_PROB = 0.2
     BATCH_NORMALIZATION = True
     DROPOUT = True
 
     # Path of pre-trained model
-    MODEL_PATH = 'num_epochs_{}_lr_{}_batch_size_{}_drop_prob_{}.pth' \
-                 .format(NUM_EPOCHS, LEARNING_RATE, BATCH_SIZE, DROP_PROB)
+    MODEL_PATH = r"trained_models/model_kernel22_after5_anal_batch20_epochs15_data_5000.pth"
 
     # Get the dataset
     transform = compose(transforms.ToTensor(), minmax_scale)
@@ -97,3 +132,5 @@ if __name__ == '__main__':
     predict(model=model, data_file="apple neg.txt", transform=transform,
             fruit_label_enum=create_fruit_labels(fruits=("apple", "banana", "mix")),
             data_width=2100, confidence_threshold=0.7)
+
+    predict_test_dataset(model=model)
