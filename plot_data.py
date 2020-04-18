@@ -45,6 +45,7 @@ def plot_raw_data1(data_files, labels, color_palette="Set2", max_weight=None, fa
     # Move the legend to an empty part of the plot
     # plt.legend(loc='upper right')
 
+
 def plot_violin_plot_of_all_data(root_dir="YOMIRAN"):
     pass
 
@@ -399,20 +400,24 @@ if __name__ == '__main__':
     # plot_raw_data1(data_files=[apple_file], labels=["apple"])
     # plot_raw_data1(data_files=[banana_file], labels=["banana"])
     # plot_raw_data1(data_files=[mix_file], labels=["mix"])
+    apple_file1 = r"C:\Users\Nadav\PycharmProjects\final_project\YOMIRAN\2_Sasha\Apple\Anal\After 5\YY20-133 neg.txt"
+    apple_file2 = r"C:\Users\Nadav\PycharmProjects\final_project\YOMIRAN\4_Yael\Apple\Anal\After 5\YY20-141 neg.txt"
     plot_raw_data1(data_files=[apple_file, banana_file, mix_file], labels=["apple", "banana", "mix"], max_weight=800)
+    plot_raw_data1(data_files=[apple_file, apple_file1, apple_file2], labels=["apple", "apple 1", "apple 2"],
+                   max_weight=800)
 
-    # plot confusion matrix
-    true_labels = np.array(
-        [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2,
-         3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4,
-         5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5])
-    predictions = np.array(
-        [1, 2, 4, 3, 5, 1, 2, 4, 3, 5, 1, 2, 3, 4, 4, 1, 4, 3, 4, 5, 1, 2, 4, 4, 5, 1, 2, 4, 4, 5, 1, 2, 4, 4, 5, 1, 2,
-         4, 4, 5, 1, 2, 3, 3, 5, 1, 2, 3, 3, 5, 1, 2, 3, 4, 4, 1, 2, 3, 4, 1, 1, 2, 3, 4, 1, 1, 2, 3, 4, 1, 1, 2, 4, 4,
-         5, 1, 2, 4, 4, 5, 1, 2, 4, 4, 5, 1, 2, 4, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5])
-    fruits = ["fruit 1", "fruit 2", "fruit 3", "fruit 4", "fruit 5"]
-    plot_confusion_matrix(true_labels=true_labels, predictions=predictions, fruits=fruits, title="Confusion matrix",
-                          show_null_values=True)
-
-    plot_classification_report(true_labels=true_labels, predictions=predictions)
+    # # plot confusion matrix
+    # true_labels = np.array(
+    #     [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2,
+    #      3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4,
+    #      5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5])
+    # predictions = np.array(
+    #     [1, 2, 4, 3, 5, 1, 2, 4, 3, 5, 1, 2, 3, 4, 4, 1, 4, 3, 4, 5, 1, 2, 4, 4, 5, 1, 2, 4, 4, 5, 1, 2, 4, 4, 5, 1, 2,
+    #      4, 4, 5, 1, 2, 3, 3, 5, 1, 2, 3, 3, 5, 1, 2, 3, 4, 4, 1, 2, 3, 4, 1, 1, 2, 3, 4, 1, 1, 2, 3, 4, 1, 1, 2, 4, 4,
+    #      5, 1, 2, 4, 4, 5, 1, 2, 4, 4, 5, 1, 2, 4, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5])
+    # fruits = ["fruit 1", "fruit 2", "fruit 3", "fruit 4", "fruit 5"]
+    # plot_confusion_matrix(true_labels=true_labels, predictions=predictions, fruits=fruits, title="Confusion matrix",
+    #                       show_null_values=True)
+    #
+    # plot_classification_report(true_labels=true_labels, predictions=predictions)
     plt.show()
