@@ -59,6 +59,8 @@ class CNN(nn.Module):
                  fc1_amount_output_nodes=1000, fc2_amount_output_nodes=500, fc3_amount_output_node=100):
 
         super(CNN, self).__init__()
+
+        # layer 1
         if batch_normalization:
             self.layer1 = nn.Sequential(nn.Conv2d(1, num_channels_layer1, kernel_size=kernel_size, padding=padding),
                                         nn.BatchNorm2d(num_channels_layer1),
@@ -68,11 +70,8 @@ class CNN(nn.Module):
             self.layer1 = nn.Sequential(nn.Conv2d(1, num_channels_layer1, kernel_size=kernel_size, padding=padding),
                                         nn.ReLU(),
                                         nn.MaxPool2d(kernel_size))
-        if dropout:
-            self.dropout = nn.Sequential(nn.Dropout(p=drop_prob))
-        else:
-            self.dropout = lambda x: x  # identity function
 
+        # layer 2
         if batch_normalization:
             self.layer2 = nn.Sequential(nn.Conv2d(num_channels_layer1, num_channels_layer2, kernel_size=kernel_size,
                                                   padding=padding),
@@ -84,6 +83,12 @@ class CNN(nn.Module):
                                                   padding=padding),
                                         nn.ReLU(),
                                         nn.MaxPool2d(kernel_size))
+
+        # dropout
+        if dropout:
+            self.dropout = nn.Sequential(nn.Dropout(p=drop_prob))
+        else:
+            self.dropout = lambda x: x  # identity function
 
         # calculate shape of data after layer 1
         data_shape_layer1_after_conv2d = calculate_output_shape(layer_name="conv", h_in=data_height, w_in=data_width,
@@ -107,6 +112,35 @@ class CNN(nn.Module):
         self.fc3 = nn.Linear(fc2_amount_output_nodes, fc3_amount_output_node)
         self.fc4 = nn.Linear(fc3_amount_output_node, amount_of_labels)
 
+        # paper architecture
+        self.paper_conv1 = nn.Sequential(nn.Conv2d(1, num_channels_layer1, kernel_size=kernel_size, padding=padding),
+                                         nn.BatchNorm2d(num_channels_layer1),
+                                         nn.ReLU())
+
+        self.paper_conv2 = nn.Sequential(nn.Conv2d(num_channels_layer1, num_channels_layer2, kernel_size=kernel_size,
+                                         padding=padding),
+                                         nn.BatchNorm2d(num_channels_layer2),
+                                         nn.ReLU(),
+                                         nn.MaxPool2d(kernel_size),
+                                         nn.Dropout(p=0.25))
+
+        data_shape_layer1_after_conv2d = calculate_output_shape(layer_name="conv", h_in=data_height, w_in=data_width,
+                                                                kernel_size=kernel_size, padding=padding)
+        h_out, w_out = data_shape_layer1_after_conv2d
+
+        # calculate shape of data after layer 2
+        data_shape_layer2_after_conv2d = calculate_output_shape(layer_name="conv", h_in=h_out, w_in=w_out,
+                                                                kernel_size=kernel_size, padding=padding)
+        h_out, w_out = data_shape_layer2_after_conv2d
+        data_shape_layer2_after_maxpool = calculate_output_shape(layer_name="pool", h_in=h_out, w_in=w_out,
+                                                                 kernel_size=kernel_size)
+        h_out, w_out = data_shape_layer2_after_maxpool
+
+        self.paper_fc1 = nn.Sequential(nn.Linear(h_out * w_out * num_channels_layer2, fc1_amount_output_nodes),
+                                       nn.ReLU(),
+                                       nn.Dropout(p=0.5))
+        self.paper_fc2 = nn.Linear(fc1_amount_output_nodes, amount_of_labels)
+
     def forward(self, x):
         out = self.layer1(x)
         out = self.dropout(out)
@@ -120,15 +154,22 @@ class CNN(nn.Module):
         out = self.fc3(out)
         out = self.dropout(out)
         out = self.fc4(out)
-        # out = torch.nn.functional.softmax(out, dim=1)  # this is a test, brings us probabilities
         return out
+
+    # def forward(self, x):
+    #     # like the paper
+    #     out = self.paper_conv1(x)
+    #     out = self.paper_conv2(out)
+    #     out = out.view(out.size(0), -1)
+    #     out = self.paper_fc1(out)
+    #     out = self.paper_fc2(out)
+    #     return out
 
 
 def get_accuracy_labels_vs_predicted(epoch, model, batch_size, data_loader, fruit_label_enum,
                                      get_labels_predictions=False):
     correct = 0.0
     total = 0.0
-    # i = epoch * batch_size
     all_true_labels = None
     all_predictions = None
     for spectrum, labels_np_string in data_loader.load_data():
@@ -144,8 +185,6 @@ def get_accuracy_labels_vs_predicted(epoch, model, batch_size, data_loader, frui
 
         total += labels.size(0)
         correct += (predicted == labels).sum()
-        # if i == (epoch+1) * batch_size:
-        #     break
         if get_labels_predictions:
             if all_true_labels is None:
                 all_true_labels = labels_np_string
@@ -202,7 +241,7 @@ def train_model(model, fruit_label_enum, train_data_loader, test_data_loader, nu
                                                                                          get_labels_predictions=True)
 
         model.train()  # set parameters for training
-        for i, (spectrum, labels) in enumerate(train_data_loader.load_data()):
+        for spectrum, labels in train_data_loader.load_data():
             spectrum = Variable(spectrum.float())
             # converting fruit names to int values
             for fruit in fruit_label_enum:
