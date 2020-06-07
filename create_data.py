@@ -26,11 +26,24 @@ def create_dataset(data_files, fruits=("apple", "banana", "mix"), sample_time="a
         train_dataset_size = int(size_of_dataset * train_data_percentage)
         test_dataset_size = size_of_dataset - train_dataset_size
 
+        # split to train and test
+        amount_of_train_data_to_choose = int(train_data_percentage * existing_data.shape[0])
+        indices_of_train = random.sample(range(existing_data.shape[0]), amount_of_train_data_to_choose)
+        indices_of_test = [i for i in range(existing_data.shape[0]) if i not in indices_of_train]
+        # getting the data from the existing data
+        train_data = existing_data[indices_of_train]
+        train_labels = existing_labels[indices_of_train]
+        test_data = existing_data[indices_of_test]
+        test_labels = existing_labels[indices_of_test]
+
         # Create train and test dataset. Existing data will be part of the train dataset
-        for type_of_dataset, dataset_size in zip(["train", "test"], [train_dataset_size, test_dataset_size]):
+        for type_of_dataset, dataset_size, data, labels in zip(["train", "test"],
+                                                               [train_dataset_size, test_dataset_size],
+                                                               [train_data, test_data],
+                                                               [train_labels, test_labels]):
 
             __create_train_or_test_dataset(size_of_dataset=dataset_size, type_of_dataset=type_of_dataset,
-                                           existing_data=existing_data, existing_labels=existing_labels,
+                                           existing_data=data, existing_labels=labels,
                                            tolerance=tolerance, number_of_samples_to_alter=number_of_samples_to_alter,
                                            train_spectrum_path=train_spectrum_path, train_labels_path=train_labels_path,
                                            test_spectrum_path=test_spectrum_path, test_labels_path=test_labels_path,
@@ -202,7 +215,8 @@ def __create_random_data_from_existing_data(existing_data, existing_labels, amou
             # pick a random number between -tolerance to tolerance
             alter_amount = -tolerance + (random.random() * (2 * tolerance))
             current_data = copy.deepcopy(data_to_randomize_from)
-            current_data[0][index_to_alter] += alter_amount
+            if current_data[0][index_to_alter] + alter_amount > 0:
+                current_data[0][index_to_alter] += alter_amount
         if randomized_data is None:
             randomized_data = current_data
             randomized_labels = np.array([label_of_data_to_randomize])
