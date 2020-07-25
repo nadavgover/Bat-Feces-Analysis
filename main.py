@@ -61,7 +61,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
             for k in range(1, amount_train_data):
                 model = KNN(k=k, train_data_loader=train_data_loader, test_data_loader=test_data_loader)
                 accuracy = model.train()
-                print("k={}\tAccuracy: {:.3f}".format(k, accuracy))
+                print("k={}\tAccuracy: {:.3f}%".format(k, accuracy * 100))
 
         else:
             train_data_loader_size_calculator = copy.deepcopy(train_data_loader)
