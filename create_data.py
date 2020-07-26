@@ -52,15 +52,19 @@ def create_dataset(data_files, fruits=("apple", "banana", "mix"), sample_time="a
                                            create_dataset_progress_bar_intvar=create_dataset_progress_bar_intvar)
 
     else:  # do not stretch data (do not create more data from existing data)
-        train_dataset_size = int(train_data_percentage * existing_data.shape[0])
-        indices_of_train = random.sample(range(existing_data.shape[0]), train_dataset_size)
-        indices_of_test = [i for i in range(existing_data.shape[0]) if i not in indices_of_train]
-
+        # train_dataset_size = int(train_data_percentage * existing_data.shape[0])
+        # indices_of_train = random.sample(range(existing_data.shape[0]), train_dataset_size)
+        # indices_of_test = [i for i in range(existing_data.shape[0]) if i not in indices_of_train]
+        #
         # getting the data from the existing data
-        train_data = existing_data[indices_of_train]
-        train_labels = existing_labels[indices_of_train]
-        test_data = existing_data[indices_of_test]
-        test_labels = existing_labels[indices_of_test]
+        # train_data = existing_data[indices_of_train]
+        # train_labels = existing_labels[indices_of_train]
+        # test_data = existing_data[indices_of_test]
+        # test_labels = existing_labels[indices_of_test]
+
+        train_data, train_labels, test_data, test_labels = train_test_split(existing_data=existing_data,
+                                                                            existing_labels=existing_labels,
+                                                                            train_data_percentage=train_data_percentage)
 
         # saving the data to the corresponding file
         save_to_file(file=train_spectrum_path, data_to_save=train_data, mode="wb")
@@ -68,6 +72,20 @@ def create_dataset(data_files, fruits=("apple", "banana", "mix"), sample_time="a
         save_to_file(file=test_spectrum_path, data_to_save=test_data, mode="wb")
         save_to_file(file=test_labels_path, data_to_save=test_labels, mode="wb")
     return True
+
+
+def train_test_split(existing_data, existing_labels, train_data_percentage):
+    train_dataset_size = int(train_data_percentage * existing_data.shape[0])
+    indices_of_train = random.sample(range(existing_data.shape[0]), train_dataset_size)
+    indices_of_test = [i for i in range(existing_data.shape[0]) if i not in indices_of_train]
+
+    # getting the data from the existing data
+    train_data = existing_data[indices_of_train]
+    train_labels = existing_labels[indices_of_train]
+    test_data = existing_data[indices_of_test]
+    test_labels = existing_labels[indices_of_test]
+
+    return train_data, train_labels, test_data, test_labels
 
 
 def __create_train_or_test_dataset(size_of_dataset, type_of_dataset, existing_data, existing_labels, tolerance,

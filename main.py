@@ -2,12 +2,14 @@ from pathlib import Path
 import torchvision.transforms as transforms
 from sklearn.preprocessing import minmax_scale
 import copy
+import numpy as np
+import math
 
 from validate_data import get_valid_and_invalid_files
-from create_data import create_dataset
+from create_data import create_dataset, train_test_split, save_to_file
 from data_loader import DataLoader
 from cnn import compose, train_model, CNN
-from knn import  KNN
+from knn import KNN
 import plot_data
 from fruit_label_enum import create_fruit_labels
 from predict import load_model, predict
@@ -23,7 +25,8 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
          show_statistics=True, predict_now=False, file_to_predict=r"apple neg.txt", confidence_threshold=0.7,
          validate_hierarchy=True, validate_filename_format=True, validate_empty_file=True,
          create_dataset_progress_bar_intvar=None, fc1_amount_output_nodes=1000,
-         fc2_amount_output_nodes=500, fc3_amount_output_node=100, stretch_data=True, knn=False):
+         fc2_amount_output_nodes=500, fc3_amount_output_node=100, stretch_data=True, knn=False,
+         cross_validation_iterations=5):
 
     # create data set
     if create_dataset_now:
@@ -71,6 +74,8 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
             fruits_from_dataset = []
             for spectrum, labels in train_data_loader_size_calculator.load_data():
                 amount_train_data += spectrum.shape[0]
+
+                # deprecated
                 if fruits is None:
                     for label in labels:
                         if label not in fruits_from_dataset:
@@ -81,21 +86,76 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                 fruit_label_enum = create_fruit_labels(fruits=fruits_from_dataset)
                 fruits = fruits_from_dataset
 
-            # initialize the neural net
-            model = CNN(amount_of_labels=len(fruit_label_enum), batch_normalization=batch_normalization,
-                        dropout=dropout, drop_prob=drop_prob, kernel_size=kernel_size, padding=padding,
-                        data_width=data_width, data_height=2, num_channels_layer1=num_channels_layer1,
-                        num_channels_layer2=num_channels_layer2, fc1_amount_output_nodes=fc1_amount_output_nodes,
-                        fc2_amount_output_nodes=fc2_amount_output_nodes, fc3_amount_output_node=fc3_amount_output_node)
+            cross_validation_losses = []
+            cross_validation_accuracies_train = []
+            cross_validation_true_labels = []
+            cross_validation_predictions_of_last_epoch = []
+            statistics_of_all_iterations = []
+            for i in range(cross_validation_iterations):
+                # Get the dataset
+                train_data_loader = DataLoader("train", train_spectrum_path=train_spectrum_path,
+                                               train_labels_path=train_labels_path,
+                                               batch_size=batch_size, transform=transform)
+                test_data_loader = DataLoader("test", test_spectrum_path=test_spectrum_path,
+                                              test_labels_path=test_labels_path,
+                                              batch_size=batch_size, transform=transform)
 
-            # train the model
-            statistics = train_model(model=model, fruit_label_enum=fruit_label_enum, train_data_loader=train_data_loader,
-                                     test_data_loader=test_data_loader, num_epochs=num_epochs,
-                                     learning_rate=learning_rate, batch_size=batch_size, weight_decay=weight_decay,
-                                     weight_decay_amount=weight_decay_amount, model_save_path=model_save_path,
-                                     train_dataset_size=amount_train_data)
+                # initialize the neural net
+                model = CNN(amount_of_labels=len(fruit_label_enum), batch_normalization=batch_normalization,
+                            dropout=dropout, drop_prob=drop_prob, kernel_size=kernel_size, padding=padding,
+                            data_width=data_width, data_height=2, num_channels_layer1=num_channels_layer1,
+                            num_channels_layer2=num_channels_layer2, fc1_amount_output_nodes=fc1_amount_output_nodes,
+                            fc2_amount_output_nodes=fc2_amount_output_nodes, fc3_amount_output_node=fc3_amount_output_node)
 
-            losses, accuracies_train, accuracies_test, true_labels, predictions_of_last_epoch = statistics
+                # train the model
+                statistics = train_model(model=model, fruit_label_enum=fruit_label_enum, train_data_loader=train_data_loader,
+                                         test_data_loader=test_data_loader, num_epochs=num_epochs,
+                                         learning_rate=learning_rate, batch_size=batch_size, weight_decay=weight_decay,
+                                         weight_decay_amount=weight_decay_amount, model_save_path=model_save_path,
+                                         train_dataset_size=amount_train_data)
+
+                statistics_of_all_iterations.append(statistics)
+                # losses, accuracies_train, accuracies_test, true_labels, predictions_of_last_epoch = statistics
+
+                # shuffle the data for cross validation
+                existing_data = None
+                existing_labels = None
+                train_data_loader_copy = copy.deepcopy(train_data_loader)
+                test_data_loader_copy = copy.deepcopy(test_data_loader)
+                amount_train_data = 0
+                amount_test_data = 0
+                for spectrum, labels in train_data_loader_copy.load_data():
+                    amount_train_data += spectrum.shape[0]
+                    if existing_data is None:
+                        existing_data = spectrum
+                        existing_labels = labels
+                    else:
+                        existing_data = np.vstack((existing_data, spectrum))
+                        existing_labels = np.hstack((existing_labels, labels))
+
+                for spectrum, labels in test_data_loader_copy.load_data():
+                    amount_test_data += spectrum.shape[0]
+                    if existing_data is None:
+                        existing_data = spectrum
+                        existing_labels = labels
+                    else:
+                        existing_data = np.vstack((existing_data, spectrum))
+                        existing_labels = np.hstack((existing_labels, labels))
+
+                amount_of_data = amount_train_data + amount_test_data
+                existing_data = existing_data.reshape((amount_of_data, 2, data_width))
+
+                train_data_percentage = math.ceil(10 * (amount_train_data / amount_of_data)) / 10
+                train_data, train_labels, test_data, test_labels = train_test_split(existing_data=existing_data,
+                                                                                    existing_labels=existing_labels,
+                                                                                    train_data_percentage=train_data_percentage)
+
+                # saving the data to the corresponding file
+                save_to_file(file=Path(train_spectrum_path), data_to_save=train_data, mode="wb")
+                save_to_file(file=Path(train_labels_path), data_to_save=train_labels, mode="wb")
+                save_to_file(file=Path(test_spectrum_path), data_to_save=test_data, mode="wb")
+                save_to_file(file=Path(test_labels_path), data_to_save=test_labels, mode="wb")
+
             # plot the statistics
             if show_statistics:
                 # plot_data.plot_train_statistics(x_values=range(len(losses)), y_values=losses, x_label="Epoch",
@@ -105,6 +165,8 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                 # plot_data.plot_train_statistics(x_values=range(len(accuracies_test)), y_values=accuracies_test,
                 #                                 x_label="Epoch", y_label="Test accuracy")
 
+                statistics = statistics_of_all_iterations[0]
+                losses, accuracies_train, accuracies_test, true_labels, predictions_of_last_epoch = statistics
                 plot_data.plot_train_statistics1(losses=losses, train_accuracy=accuracies_train,
                                                  test_accuracy=accuracies_test)
 
@@ -154,11 +216,11 @@ if __name__ == '__main__':
     train_labels_path = r"dataset/train_labels.npy"
     test_labels_path = r"dataset/test_labels.npy"
 
-    main(create_dataset_now=False, num_epochs=15, kernel_size=(2, 2), padding=(1, 1), size_of_dataset=5000,
-         model_save_path=r"trained_models/model_kernel22_after5_anal_batch50_epochs15_data_5k.pth",
+    main(create_dataset_now=True, num_epochs=20, kernel_size=(2, 2), padding=(1, 1), size_of_dataset=5000,
+         model_save_path=r"trained_models/model_dont_use.pth",
          batch_size=1, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
          train_spectrum_path=train_spectrum_path, test_spectrum_path=test_spectrum_path,
          train_labels_path=train_labels_path, test_labels_path=test_labels_path, show_statistics=True,
-         stretch_data=False, sample_location="anal", sample_time="after 5", fruits=None, data_width=2100,
+         stretch_data=False, sample_location="anal", sample_time="after 5", fruits=fruits, data_width=2100,
          num_channels_layer1=30, num_channels_layer2=6, fc1_amount_output_nodes=500, fc2_amount_output_nodes=500,
          fc3_amount_output_node=100, tolerance=100, number_of_samples_to_alter=250, knn=False, sample_type="pos")
