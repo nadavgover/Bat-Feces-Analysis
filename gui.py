@@ -19,7 +19,8 @@ DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_s
             "data_width": "2100", "confidence_threshold": "0.7", "root_dir": "YOMIRAN",
             "sample_times": ["after 5", "after 8", "before", "after 5, after 8", "after 5, before",
                              "after 8, before", "all"],
-            "sample_locations": ["anal", "oral", "all"], "train_spectrum_path": "train_spectrum",
+            "sample_locations": ["anal", "oral", "all"], "sample_types": ["pos", "neg", "all"],
+            "train_spectrum_path": "train_spectrum",
             "test_spectrum_path": "test_spectrum", "train_labels_path": "train_labels",
             "test_labels_path": "test_labels", "dataset_size": "10000", "train_data_percentage": "0.8",
             "dataset_folder_name": "dataset", "fc1_amount_output_nodes": "500", "fc2_amount_output_nodes": "500",
@@ -531,20 +532,29 @@ class FinalProjectGui(Tk):
 
         # sample time
         self.sample_time_in_create_dataset_label = ttk.Label(self.settings_create_dataset_tab, text="Sample time")
-        self.sample_time_in_create_dataset_label.place(relx=0.28, rely=0.57, anchor=CENTER)
+        self.sample_time_in_create_dataset_label.place(relx=0.28, rely=0.49, anchor=CENTER)
         self.sample_time_combo_box = ttk.Combobox(self.settings_create_dataset_tab, state="readonly",
                                                   values=DEFAULTS["sample_times"])
         self.sample_time_combo_box.set(DEFAULTS["sample_times"][0])
-        self.sample_time_combo_box.place(relx=0.28, rely=0.63, anchor=CENTER)
+        self.sample_time_combo_box.place(relx=0.28, rely=0.55, anchor=CENTER)
 
         # sample location
         self.sample_location_in_create_dataset_label = ttk.Label(self.settings_create_dataset_tab,
                                                                  text="Sample location")
-        self.sample_location_in_create_dataset_label.place(relx=0.72, rely=0.57, anchor=CENTER)
+        self.sample_location_in_create_dataset_label.place(relx=0.72, rely=0.49, anchor=CENTER)
         self.sample_location_combo_box = ttk.Combobox(self.settings_create_dataset_tab, state="readonly",
                                                       values=DEFAULTS["sample_locations"])
         self.sample_location_combo_box.set(DEFAULTS["sample_locations"][0])
-        self.sample_location_combo_box.place(relx=0.72, rely=0.63, anchor=CENTER)
+        self.sample_location_combo_box.place(relx=0.72, rely=0.55, anchor=CENTER)
+
+        # sample type
+        self.sample_type_in_create_dataset_label = ttk.Label(self.settings_create_dataset_tab,
+                                                                 text="Sample type")
+        self.sample_type_in_create_dataset_label.place(relx=0.5, rely=0.64, anchor=CENTER)
+        self.sample_type_combo_box = ttk.Combobox(self.settings_create_dataset_tab, state="readonly",
+                                                      values=DEFAULTS["sample_types"])
+        self.sample_type_combo_box.set(DEFAULTS["sample_types"][0])
+        self.sample_type_combo_box.place(relx=0.5, rely=0.7, anchor=CENTER)
 
         # create dataset button
         self.create_dataset_button = ttk.Button(self.tabs_in_create_dataset_parent, text="Create Dataset",
@@ -710,6 +720,8 @@ class FinalProjectGui(Tk):
         if sample_location[0].lower() == "all":
             sample_location = "all"
 
+        sample_type = self.sample_type_combo_box.get()
+
         create_dataset_folder = self.check_button_create_folder_for_dataset_intvar.get()
         if create_dataset_folder:
             try:
@@ -765,6 +777,7 @@ class FinalProjectGui(Tk):
         create_dataset_thread_function = partial(main, create_dataset_now=True, root_dir=self.root_dir, fruits=fruits,
                                                  sample_time=sample_time,
                                                  sample_location=sample_location,
+                                                 sample_type=sample_type,
                                                  train_spectrum_path=train_spectrum_path,
                                                  train_labels_path=train_labels_path,
                                                  test_spectrum_path=test_spectrum_path,

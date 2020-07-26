@@ -18,8 +18,8 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
          batch_size=20, learning_rate=0.01, num_epochs=20, kernel_size=(1, 10), padding=(1, 5), dropout=True,
          drop_prob=0.2, batch_normalization=True, weight_decay=True, weight_decay_amount=0.01, data_width=2100,
          model_save_path=r"model.pth", fruits=("apple", "banana", "mix"), create_dataset_now=False, root_dir="YOMIRAN",
-         num_channels_layer1=3, num_channels_layer2=6, sample_time="after 5", sample_location="anal", tolerance=5,
-         number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8, train_now=False,
+         num_channels_layer1=3, num_channels_layer2=6, sample_time="after 5", sample_location="anal", sample_type="pos",
+         tolerance=5, number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8, train_now=False,
          show_statistics=True, predict_now=False, file_to_predict=r"apple neg.txt", confidence_threshold=0.7,
          validate_hierarchy=True, validate_filename_format=True, validate_empty_file=True,
          create_dataset_progress_bar_intvar=None, fc1_amount_output_nodes=1000,
@@ -36,7 +36,8 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                        train_spectrum_path=Path(train_spectrum_path), train_labels_path=Path(train_labels_path),
                        test_spectrum_path=Path(test_spectrum_path), test_labels_path=Path(test_labels_path),
                        data_width=data_width, sample_time=sample_time, sample_location=sample_location,
-                       create_dataset_progress_bar_intvar=create_dataset_progress_bar_intvar, stretch_data=stretch_data)
+                       create_dataset_progress_bar_intvar=create_dataset_progress_bar_intvar, stretch_data=stretch_data,
+                       sample_type=sample_type)
 
     # transformation of dataset
     transform = compose(transforms.ToTensor(), minmax_scale)
@@ -75,6 +76,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                         if label not in fruits_from_dataset:
                             fruits_from_dataset.append(label)
 
+            # deprecated
             if fruits is None:
                 fruit_label_enum = create_fruit_labels(fruits=fruits_from_dataset)
                 fruits = fruits_from_dataset
@@ -159,4 +161,4 @@ if __name__ == '__main__':
          train_labels_path=train_labels_path, test_labels_path=test_labels_path, show_statistics=True,
          stretch_data=False, sample_location="anal", sample_time="after 5", fruits=None, data_width=2100,
          num_channels_layer1=30, num_channels_layer2=6, fc1_amount_output_nodes=500, fc2_amount_output_nodes=500,
-         fc3_amount_output_node=100, tolerance=100, number_of_samples_to_alter=250, knn=False)
+         fc3_amount_output_node=100, tolerance=100, number_of_samples_to_alter=250, knn=False, sample_type="pos")
