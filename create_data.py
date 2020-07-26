@@ -16,11 +16,12 @@ def create_dataset(data_files, fruits=("apple", "banana", "mix"), sample_time="a
                    tolerance=1, number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8,
                    train_spectrum_path=Path("dataset/train_spectrum.npy"), train_labels_path=Path("dataset/train_labels.npy"),
                    test_spectrum_path=Path("dataset/test_spectrum.npy"), test_labels_path=Path("dataset/test_labels.npy"),
-                   data_width=2100, stretch_data=False, create_dataset_progress_bar_intvar=None):
+                   data_width=2100, stretch_data=False, create_dataset_progress_bar_intvar=None, sample_type="pos"):
 
     # Get existing data
     existing_data, existing_labels = __get_existing_data(fruits=fruits, data_files=data_files, sample_time=sample_time,
-                                                         sample_location=sample_location, data_width=data_width)
+                                                         sample_location=sample_location, data_width=data_width,
+                                                         sample_type=sample_type)
 
     if stretch_data:
         train_dataset_size = int(size_of_dataset * train_data_percentage)
@@ -124,7 +125,7 @@ def save_to_file(file, data_to_save, mode):
 
 
 def __get_existing_data(data_files, data_width=2100, fruits=("apple", "banana", "mix"), sample_time="after 5",
-                        sample_location="anal"):
+                        sample_location="anal", sample_type="pos"):
     if type(sample_time) == list:
         for _sample_time in sample_time:
             if _sample_time.lower() not in SAMPLE_TIMES:
@@ -138,6 +139,9 @@ def __get_existing_data(data_files, data_width=2100, fruits=("apple", "banana", 
         raise ValueError("sample_time must be in {}".format(SAMPLE_TIMES))
     if type(sample_location) == str and sample_location.lower() not in SAMPLE_LOCATIONS:
         raise ValueError("sample_location must be in {}".format(SAMPLE_LOCATIONS))
+
+    if sample_type.lower() not in ["pos", "neg", "all"]:
+        raise ValueError("sample_type must be in ['pos', 'neg', 'all']. {} was given".format(sample_type))
 
     existing_data = None
     existing_labels = None
@@ -170,6 +174,10 @@ def __get_existing_data(data_files, data_width=2100, fruits=("apple", "banana", 
             if sample_location.lower() != "all":
                 if sample_location.lower() not in data_file.lower():
                     continue
+
+        if sample_type.lower() != "all":
+            if sample_type.lower() not in data_file.lower():
+                continue
 
         label = __get_label(file_path=data_file, fruits=fruits)
         if label == "Unknown fruit":
@@ -252,7 +260,8 @@ if __name__ == '__main__':
         valid_files, _ = get_valid_and_invalid_files(root_dir="YOMIRAN", validate_hierarchy=True,
                                                      validate_filename_format=True, validate_empty_file=True)
         create_dataset(data_files=valid_files, fruits=fruits, size_of_dataset=60000, train_data_percentage=0.8,
-                       tolerance=1, number_of_samples_to_alter=100, sample_time="after 5",
+                       tolerance=1, number_of_samples_to_alter=100,
+                       sample_time="after 5", sample_location="anal", sample_type="pos",
                        stretch_data=False, train_spectrum_path=Path("train_spectrum_stam.npy"),
                        train_labels_path=Path("train_labels_stam.npy"),
                        test_spectrum_path=Path("test_spectrum_stam.npy"),
