@@ -41,8 +41,9 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
     # transformation of dataset
     transform = compose(transforms.ToTensor(), minmax_scale)
     # get the labels enum
-    fruit_label_enum = create_fruit_labels(fruits=fruits)
-    transform = transforms.ToTensor()
+    if fruits:
+        fruit_label_enum = create_fruit_labels(fruits=fruits)
+    # transform = transforms.ToTensor()
 
     if train_now:
         # Get the dataset
@@ -66,8 +67,17 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
         else:
             train_data_loader_size_calculator = copy.deepcopy(train_data_loader)
             amount_train_data = 0
+            fruits_from_dataset = []
             for spectrum, labels in train_data_loader_size_calculator.load_data():
                 amount_train_data += spectrum.shape[0]
+                if fruits is None:
+                    for label in labels:
+                        if label not in fruits_from_dataset:
+                            fruits_from_dataset.append(label)
+
+            if fruits is None:
+                fruit_label_enum = create_fruit_labels(fruits=fruits_from_dataset)
+                fruits = fruits_from_dataset
 
             # initialize the neural net
             model = CNN(amount_of_labels=len(fruit_label_enum), batch_normalization=batch_normalization,
@@ -137,16 +147,16 @@ if __name__ == '__main__':
     # test_spectrum_path = r"dataset/test_spectrum_after5_anal_data_original_width900.npy"
     # train_labels_path = r"dataset/train_labels_after5_anal_data_original_width900.npy"
     # test_labels_path = r"dataset/test_labels_after5_anal_data_original_width1900.npy"
-    train_spectrum_path = r"dataset/train_spectrum_5k.npy"
-    test_spectrum_path = r"dataset/test_spectrum_5k.npy"
-    train_labels_path = r"dataset/train_labels_5k.npy"
-    test_labels_path = r"dataset/test_labels_5k.npy"
+    train_spectrum_path = r"dataset/train_spectrum.npy"
+    test_spectrum_path = r"dataset/test_spectrum.npy"
+    train_labels_path = r"dataset/train_labels.npy"
+    test_labels_path = r"dataset/test_labels.npy"
 
     main(create_dataset_now=False, num_epochs=15, kernel_size=(2, 2), padding=(1, 1), size_of_dataset=5000,
          model_save_path=r"trained_models/model_kernel22_after5_anal_batch50_epochs15_data_5k.pth",
          batch_size=1, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
          train_spectrum_path=train_spectrum_path, test_spectrum_path=test_spectrum_path,
          train_labels_path=train_labels_path, test_labels_path=test_labels_path, show_statistics=True,
-         stretch_data=False, sample_location="anal", sample_time="after 5", fruits=fruits, data_width=2100,
+         stretch_data=False, sample_location="anal", sample_time="after 5", fruits=None, data_width=2100,
          num_channels_layer1=30, num_channels_layer2=6, fc1_amount_output_nodes=500, fc2_amount_output_nodes=500,
-         fc3_amount_output_node=100, tolerance=100, number_of_samples_to_alter=250, knn=True)
+         fc3_amount_output_node=100, tolerance=100, number_of_samples_to_alter=250, knn=False)

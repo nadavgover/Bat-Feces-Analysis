@@ -11,6 +11,10 @@ from main import main
 MODEL_PATH = 0
 PREDICT_DATA_PATH = 1
 ROOT_DIR = 2
+TRAIN_SPECTRUM_PATH = 3
+TRAIN_LABELS_PATH = 4
+TEST_SPECTRUM_PATH = 5
+TEST_LABELS_PATH = 6
 DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_size": "(2, 2)", "padding": "(1, 1)",
             "data_width": "2100", "confidence_threshold": "0.7", "root_dir": "YOMIRAN",
             "sample_times": ["after 5", "after 8", "before", "after 5, after 8", "after 5, before",
@@ -18,9 +22,9 @@ DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_s
             "sample_locations": ["anal", "oral", "all"], "train_spectrum_path": "train_spectrum",
             "test_spectrum_path": "test_spectrum", "train_labels_path": "train_labels",
             "test_labels_path": "test_labels", "dataset_size": "10000", "train_data_percentage": "0.8",
-            "dataset_folder_name": "dataset", "fc1_amount_output_nodes": "1000", "fc2_amount_output_nodes": "500",
-            "fc3_amount_output_nodes": "100", "num_channels_layer1": "3", "num_channels_layer2": "6",
-            "batch_normalization": "True"}
+            "dataset_folder_name": "dataset", "fc1_amount_output_nodes": "500", "fc2_amount_output_nodes": "500",
+            "fc3_amount_output_nodes": "100", "num_channels_layer1": "30", "num_channels_layer2": "6",
+            "batch_normalization": "True", "drop_prob": 0.2, "epoch_num": 50}
 
 
 class ToolTip(object):
@@ -90,6 +94,399 @@ class FinalProjectGui(Tk):
 
         self.design_predict_tab()
         self.design_create_dataset_tab()
+        self.design_train_tab()
+
+    def design_train_tab(self):
+        self.tabs_in_train_parent = ttk.Notebook(self.train_tab)
+        self.settings_train_tab = ttk.Frame(self.tabs_in_train_parent)
+        self.advanced_train_tab = ttk.Frame(self.tabs_in_train_parent)
+        self.tabs_in_train_parent.add(self.settings_train_tab, text="Settings")
+        self.tabs_in_train_parent.add(self.advanced_train_tab, text="Advanced")
+        self.tabs_in_train_parent.pack(expand=1, fill="both")
+
+        self.design_train_settings_tab()
+        self.design_train_advanced_tab()
+
+        # train button
+        self.train_button = ttk.Button(self.tabs_in_train_parent, text="Train",
+                                       command=self.train)
+
+        self.train_button.place(relx=0.5, rely=0.90, anchor=CENTER)
+
+    def design_train_settings_tab(self):
+        # train spectrum file
+        self.train_spectrum_file_frame_in_train = ttk.Frame(self.settings_train_tab, borderwidth=2, relief=SUNKEN)
+        self.train_spectrum_file_frame_in_train.place(relx=0.65, rely=0.08, anchor=CENTER)
+        self.train_spectrum_file_in_train_label = ttk.Label(self.settings_train_tab, text="Train spectrum file:")
+        self.train_spectrum_file_in_train_label.place(relx=0.2, rely=0.08, anchor=CENTER)
+        self.train_spectrum_file_in_train_stringvar = StringVar()
+        self.train_spectrum_file_in_train_entry = Entry(self.train_spectrum_file_frame_in_train,
+                                                        textvariable=self.train_spectrum_file_in_train_stringvar,
+                                                        justify=CENTER, borderwidth=0, highlightthickness=1,
+                                                        highlightbackground="grey", background="white")
+        self.train_spectrum_file_in_train_entry.pack(side=RIGHT, padx=0.5, pady=1, fill=Y)
+        train_spectrum_file_dialog = partial(self.file_dialog, data_or_model_file_path=TRAIN_SPECTRUM_PATH)
+        self.train_spectrum_browse_button_in_train = ttk.Button(self.train_spectrum_file_frame_in_train, text="Browse",
+                                                                command=train_spectrum_file_dialog)
+        self.train_spectrum_browse_button_in_train.pack(side=RIGHT, padx=0, pady=0, fill=Y)
+
+        # train labels file
+        self.train_labels_file_frame_in_train = ttk.Frame(self.settings_train_tab, borderwidth=2, relief=SUNKEN)
+        self.train_labels_file_frame_in_train.place(relx=0.65, rely=0.19, anchor=CENTER)
+        self.train_labels_file_in_train_label = ttk.Label(self.settings_train_tab, text="Train labels file:")
+        self.train_labels_file_in_train_label.place(relx=0.175, rely=0.19, anchor=CENTER)
+        self.train_labels_file_in_train_stringvar = StringVar()
+        self.train_labels_file_in_train_entry = Entry(self.train_labels_file_frame_in_train,
+                                                      textvariable=self.train_labels_file_in_train_stringvar,
+                                                      justify=CENTER, borderwidth=0, highlightthickness=1,
+                                                      highlightbackground="grey", background="white")
+        self.train_labels_file_in_train_entry.pack(side=RIGHT, padx=0.5, pady=1, fill=Y)
+        train_labels_file_dialog = partial(self.file_dialog, data_or_model_file_path=TRAIN_LABELS_PATH)
+        self.train_labels_browse_button_in_train = ttk.Button(self.train_labels_file_frame_in_train, text="Browse",
+                                                              command=train_labels_file_dialog)
+        self.train_labels_browse_button_in_train.pack(side=RIGHT, padx=0, pady=0, fill=Y)
+
+        # test spectrum file
+        self.test_spectrum_file_frame_in_train = ttk.Frame(self.settings_train_tab, borderwidth=2, relief=SUNKEN)
+        self.test_spectrum_file_frame_in_train.place(relx=0.65, rely=0.30, anchor=CENTER)
+        self.test_spectrum_file_in_train_label = ttk.Label(self.settings_train_tab, text="Test spectrum file:")
+        self.test_spectrum_file_in_train_label.place(relx=0.195, rely=0.30, anchor=CENTER)
+        self.test_spectrum_file_in_train_stringvar = StringVar()
+        self.test_spectrum_file_in_train_entry = Entry(self.test_spectrum_file_frame_in_train,
+                                                       textvariable=self.test_spectrum_file_in_train_stringvar,
+                                                       justify=CENTER, borderwidth=0, highlightthickness=1,
+                                                       highlightbackground="grey", background="white")
+        self.test_spectrum_file_in_train_entry.pack(side=RIGHT, padx=0.5, pady=1, fill=Y)
+        test_spectrum_file_dialog = partial(self.file_dialog, data_or_model_file_path=TEST_SPECTRUM_PATH)
+        self.test_spectrum_browse_button_in_train = ttk.Button(self.test_spectrum_file_frame_in_train, text="Browse",
+                                                               command=test_spectrum_file_dialog)
+        self.test_spectrum_browse_button_in_train.pack(side=RIGHT, padx=0, pady=0, fill=Y)
+
+        # test labels file
+        self.test_labels_file_frame_in_train = ttk.Frame(self.settings_train_tab, borderwidth=2, relief=SUNKEN)
+        self.test_labels_file_frame_in_train.place(relx=0.65, rely=0.41, anchor=CENTER)
+        self.test_labels_file_in_train_label = ttk.Label(self.settings_train_tab, text="Test labels file:")
+        self.test_labels_file_in_train_label.place(relx=0.17, rely=0.41, anchor=CENTER)
+        self.test_labels_file_in_train_stringvar = StringVar()
+        self.test_labels_file_in_train_entry = Entry(self.test_labels_file_frame_in_train,
+                                                     textvariable=self.test_labels_file_in_train_stringvar,
+                                                     justify=CENTER, borderwidth=0, highlightthickness=1,
+                                                     highlightbackground="grey", background="white")
+        self.test_labels_file_in_train_entry.pack(side=RIGHT, padx=0.5, pady=1, fill=Y)
+        test_labels_file_dialog = partial(self.file_dialog, data_or_model_file_path=TEST_LABELS_PATH)
+        self.test_labels_browse_button_in_train = ttk.Button(self.test_labels_file_frame_in_train, text="Browse",
+                                                             command=test_labels_file_dialog)
+        self.test_labels_browse_button_in_train.pack(side=RIGHT, padx=0, pady=0, fill=Y)
+
+        # epochs number
+        self.epoch_num_in_train_label = ttk.Label(self.settings_train_tab, text="Number of epochs: ")
+        self.epoch_num_in_train_label.place(relx=0.21, rely=0.52, anchor=CENTER)
+        self.epoch_num_in_train_stringvar = StringVar()
+        self.epoch_num_in_train_stringvar.set(DEFAULTS["epoch_num"])
+        self.epoch_num_in_train_entry = Entry(self.settings_train_tab, justify=CENTER,
+                                              borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                              textvariable=self.epoch_num_in_train_stringvar, bg="white")
+        self.epoch_num_in_train_entry.place(relx=0.545, rely=0.52, anchor=CENTER)
+
+        # saved model path
+        self.saved_model_path_in_train_label = ttk.Label(self.settings_train_tab, text="Saved model path: ")
+        self.saved_model_path_in_train_label.place(relx=0.205, rely=0.63, anchor=CENTER)
+        self.saved_model_path_in_train_stringvar = StringVar()
+        self.saved_model_path_in_train_stringvar.set(DEFAULTS["model_path"])
+        self.saved_model_path_in_train_entry = Entry(self.settings_train_tab, justify=CENTER,
+                                                     borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                                     textvariable=self.saved_model_path_in_train_stringvar, bg="white")
+        self.saved_model_path_in_train_entry.place(relx=0.545, rely=0.63, anchor=CENTER)
+        # saved model path tooltip
+        self.saved_model_path_in_train_tooltip = ttk.Label(self.settings_train_tab)
+        self.saved_model_path_in_train_tooltip.image = self.tooltip_icon
+        self.saved_model_path_in_train_tooltip["image"] = self.saved_model_path_in_train_tooltip.image
+        self.saved_model_path_in_train_tooltip.place(relx=0.03, rely=0.63, anchor=CENTER)
+        create_tooltip(widget=self.saved_model_path_in_train_tooltip, text="This file is where the trained model will "
+                                                                           "be saved.\nThe extension of the file"
+                                                                           " will be .pth")
+
+        # fruits list
+        self.fruits_in_train_label = ttk.Label(self.settings_train_tab,
+                                               text="Enter fruits:")
+        self.fruits_in_train_label.place(relx=0.155, rely=0.74, anchor=CENTER)
+        validate_fruit_list_cmd = (self.register(self.validate_fruit_list))  # validate command
+        # self.fruit_list_stringvar = StringVar()
+        self.fruit_list_in_train_entry = Entry(self.settings_train_tab, justify=CENTER,
+                                               borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                               textvariable=self.fruit_list_stringvar, bg="white",
+                                               validate='all', validatecommand=(validate_fruit_list_cmd, '%P'))
+        self.fruit_list_in_train_entry.place(relx=0.545, rely=0.74, anchor=CENTER)
+        self.validate_fruit_list(text="-1")  # hack to fill the default value
+
+
+    def design_train_advanced_tab(self):
+        # batch normalization
+        self.check_button_batch_norm_in_train_intvar = IntVar()
+        self.check_button_batch_norm_in_train_intvar.set(1)
+        self.check_button_batch_norm_in_train = ttk.Checkbutton(self.advanced_train_tab,
+                                                                  text="Batch normalization",
+                                                                  variable=self.check_button_batch_norm_in_train_intvar)
+        self.check_button_batch_norm_in_train.place(relx=0.237, rely=0.07, anchor=CENTER)
+        # batch normalization tooltip
+        self.check_button_batch_norm_in_train_tooltip = ttk.Label(self.advanced_train_tab)
+        self.check_button_batch_norm_in_train_tooltip.image = self.tooltip_icon
+        self.check_button_batch_norm_in_train_tooltip["image"] = self.check_button_batch_norm_in_train_tooltip.image
+        self.check_button_batch_norm_in_train_tooltip.place(relx=0.04, rely=0.07, anchor=CENTER)
+        create_tooltip(widget=self.check_button_batch_norm_in_train_tooltip, text="Check this to train the model "
+                                                                                  "with batch normalization")
+
+        # kernel size
+        self.kernel_size_in_train_label = ttk.Label(self.advanced_train_tab, text="Kernel size: ")
+        self.kernel_size_in_train_label.place(relx=0.156, rely=0.15, anchor=CENTER)
+        self.kernel_size_in_train_stringvar = StringVar()
+        self.kernel_size_in_train_stringvar.set(DEFAULTS["kernel_size"])
+        self.kernel_size_in_train_entry = Entry(self.advanced_train_tab, justify=CENTER,
+                                                  borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                                  textvariable=self.kernel_size_in_train_stringvar, bg="white")
+        self.kernel_size_in_train_entry.place(relx=0.685, rely=0.15, anchor=CENTER)
+        # kernel size tooltip
+        self.kernel_size_in_train_tooltip = ttk.Label(self.advanced_train_tab)
+        self.kernel_size_in_train_tooltip.image = self.tooltip_icon
+        self.kernel_size_in_train_tooltip["image"] = self.kernel_size_in_train_tooltip.image
+        self.kernel_size_in_train_tooltip.place(relx=0.04, rely=0.15, anchor=CENTER)
+        create_tooltip(widget=self.kernel_size_in_train_tooltip, text="Kernel size to use while training the model.\n"
+                                                                      "Expecting two natural numbers, surrounded with"
+                                                                      " parenthesis, separated with a comma.")
+
+        # padding
+        self.padding_in_train_label = ttk.Label(self.advanced_train_tab, text="Padding: ")
+        self.padding_in_train_label.place(relx=0.144, rely=0.23, anchor=CENTER)
+        self.padding_in_train_stringvar = StringVar()
+        self.padding_in_train_stringvar.set(DEFAULTS["padding"])
+        self.padding_in_train_entry = Entry(self.advanced_train_tab, justify=CENTER,
+                                            borderwidth=0, highlightthickness=1, highlightbackground="grey",
+                                            textvariable=self.padding_in_train_stringvar, bg="white")
+        self.padding_in_train_entry.place(relx=0.685, rely=0.23, anchor=CENTER)
+        # padding tooltip
+        self.padding_in_train_tooltip = ttk.Label(self.advanced_train_tab)
+        self.padding_in_train_tooltip.image = self.tooltip_icon
+        self.padding_in_train_tooltip["image"] = self.padding_in_train_tooltip.image
+        self.padding_in_train_tooltip.place(relx=0.04, rely=0.23, anchor=CENTER)
+        create_tooltip(widget=self.padding_in_train_tooltip, text="Padding to use while training the model.\n"
+                                                                  "Expecting two natural numbers, surrounded with "
+                                                                  "parenthesis, separated with a comma.")
+
+        # num channels layer 1
+        self.num_channels_layer1_in_train_label = ttk.Label(self.advanced_train_tab, text="Number of channels in "
+                                                                                          "layer 1: ")
+        self.num_channels_layer1_in_train_label.place(relx=0.287, rely=0.31, anchor=CENTER)
+        self.num_channels_layer1_in_train_stringvar = StringVar()
+        self.num_channels_layer1_in_train_stringvar.set(DEFAULTS["num_channels_layer1"])
+        self.num_channels_layer1_in_train_entry = Entry(self.advanced_train_tab, justify=CENTER,
+                                                          borderwidth=0, highlightthickness=1,
+                                                          highlightbackground="grey",
+                                                          textvariable=self.num_channels_layer1_in_train_stringvar,
+                                                          bg="white")
+        self.num_channels_layer1_in_train_entry.place(relx=0.685, rely=0.31, anchor=CENTER)
+        # num channels layer 1 tooltip
+        self.num_channels_layer1_in_train_tooltip = ttk.Label(self.advanced_train_tab)
+        self.num_channels_layer1_in_train_tooltip.image = self.tooltip_icon
+        self.num_channels_layer1_in_train_tooltip["image"] = self.num_channels_layer1_in_train_tooltip.image
+        self.num_channels_layer1_in_train_tooltip.place(relx=0.04, rely=0.31, anchor=CENTER)
+        create_tooltip(widget=self.num_channels_layer1_in_train_tooltip, text="Number of channels in layer 1 to use "
+                                                                              "while training the model.\n"
+                                                                              "Layer 1 is a convolutional layer.\n"
+                                                                              "Expecting natural number.")
+
+        # num channels layer 2
+        self.num_channels_layer2_in_train_label = ttk.Label(self.advanced_train_tab, text="Number of channels in "
+                                                                                          "layer 2: ")
+        self.num_channels_layer2_in_train_label.place(relx=0.287, rely=0.39, anchor=CENTER)
+        self.num_channels_layer2_in_train_stringvar = StringVar()
+        self.num_channels_layer2_in_train_stringvar.set(DEFAULTS["num_channels_layer2"])
+        self.num_channels_layer2_in_train_entry = Entry(self.advanced_train_tab, justify=CENTER,
+                                                        borderwidth=0, highlightthickness=1,
+                                                        highlightbackground="grey",
+                                                        textvariable=self.num_channels_layer2_in_train_stringvar,
+                                                        bg="white")
+        self.num_channels_layer2_in_train_entry.place(relx=0.685, rely=0.39, anchor=CENTER)
+        # num channels layer 2 tooltip
+        self.num_channels_layer2_in_train_tooltip = ttk.Label(self.advanced_train_tab)
+        self.num_channels_layer2_in_train_tooltip.image = self.tooltip_icon
+        self.num_channels_layer2_in_train_tooltip["image"] = self.num_channels_layer2_in_train_tooltip.image
+        self.num_channels_layer2_in_train_tooltip.place(relx=0.04, rely=0.39, anchor=CENTER)
+        create_tooltip(widget=self.num_channels_layer2_in_train_tooltip, text="Number of channels in layer 2 to use "
+                                                                              "while training the model.\n"
+                                                                              "Layer 2 is a convolutional layer.\n"
+                                                                              "Expecting a natural number.")
+
+        # amount output nodes fc1
+        self.num_output_nodes_fc1_in_train_label = ttk.Label(self.advanced_train_tab, text="Number of output nodes "
+                                                                                           "layer 3: ")
+        self.num_output_nodes_fc1_in_train_label.place(relx=0.298, rely=0.47, anchor=CENTER)
+        self.num_output_nodes_fc1_in_train_stringvar = StringVar()
+        self.num_output_nodes_fc1_in_train_stringvar.set(DEFAULTS["fc1_amount_output_nodes"])
+        self.num_output_nodes_fc1_in_train_entry = Entry(self.advanced_train_tab, justify=CENTER,
+                                                         borderwidth=0, highlightthickness=1,
+                                                         highlightbackground="grey",
+                                                         textvariable=self.num_output_nodes_fc1_in_train_stringvar,
+                                                         bg="white")
+        self.num_output_nodes_fc1_in_train_entry.place(relx=0.685, rely=0.47, anchor=CENTER)
+        # amount output nodes fc1 tooltip
+        self.num_output_nodes_fc1_in_train_tooltip = ttk.Label(self.advanced_train_tab)
+        self.num_output_nodes_fc1_in_train_tooltip.image = self.tooltip_icon
+        self.num_output_nodes_fc1_in_train_tooltip["image"] = self.num_output_nodes_fc1_in_train_tooltip.image
+        self.num_output_nodes_fc1_in_train_tooltip.place(relx=0.04, rely=0.47, anchor=CENTER)
+        create_tooltip(widget=self.num_output_nodes_fc1_in_train_tooltip, text="Number of output nodes in layer 3 "
+                                                                               "to use while training the model.\n"
+                                                                               "Layer 3 is a fully connected layer.\n"
+                                                                               "Expecting a natural number.")
+
+        # amount output nodes fc2
+        self.num_output_nodes_fc2_in_train_label = ttk.Label(self.advanced_train_tab, text="Number of output nodes "
+                                                                                           "layer 4: ")
+        self.num_output_nodes_fc2_in_train_label.place(relx=0.298, rely=0.55, anchor=CENTER)
+        self.num_output_nodes_fc2_in_train_stringvar = StringVar()
+        self.num_output_nodes_fc2_in_train_stringvar.set(DEFAULTS["fc2_amount_output_nodes"])
+        self.num_output_nodes_fc2_in_train_entry = Entry(self.advanced_train_tab, justify=CENTER,
+                                                         borderwidth=0, highlightthickness=1,
+                                                         highlightbackground="grey",
+                                                         textvariable=self.num_output_nodes_fc2_in_train_stringvar,
+                                                         bg="white")
+        self.num_output_nodes_fc2_in_train_entry.place(relx=0.685, rely=0.55, anchor=CENTER)
+        # amount output nodes fc2 tooltip
+        self.num_output_nodes_fc2_in_train_tooltip = ttk.Label(self.advanced_train_tab)
+        self.num_output_nodes_fc2_in_train_tooltip.image = self.tooltip_icon
+        self.num_output_nodes_fc2_in_train_tooltip["image"] = self.num_output_nodes_fc2_in_train_tooltip.image
+        self.num_output_nodes_fc2_in_train_tooltip.place(relx=0.04, rely=0.55, anchor=CENTER)
+        create_tooltip(widget=self.num_output_nodes_fc2_in_train_tooltip, text="Number of output nodes in layer 4 "
+                                                                               "to use while training the model.\n"
+                                                                               "Layer 4 is a fully connected layer.\n"
+                                                                               "Expecting a natural number.")
+
+        # amount output nodes fc3
+        self.num_output_nodes_fc3_in_train_label = ttk.Label(self.advanced_train_tab, text="Number of output nodes "
+                                                                                           "layer 5: ")
+        self.num_output_nodes_fc3_in_train_label.place(relx=0.298, rely=0.63, anchor=CENTER)
+        self.num_output_nodes_fc3_in_train_stringvar = StringVar()
+        self.num_output_nodes_fc3_in_train_stringvar.set(DEFAULTS["fc3_amount_output_nodes"])
+        self.num_output_nodes_fc3_in_train_entry = Entry(self.advanced_train_tab, justify=CENTER,
+                                                         borderwidth=0, highlightthickness=1,
+                                                         highlightbackground="grey",
+                                                         textvariable=self.num_output_nodes_fc3_in_train_stringvar,
+                                                         bg="white")
+        self.num_output_nodes_fc3_in_train_entry.place(relx=0.685, rely=0.63, anchor=CENTER)
+        # amount output nodes fc3 tooltip
+        self.num_output_nodes_fc3_in_train_tooltip = ttk.Label(self.advanced_train_tab)
+        self.num_output_nodes_fc3_in_train_tooltip.image = self.tooltip_icon
+        self.num_output_nodes_fc3_in_train_tooltip["image"] = self.num_output_nodes_fc3_in_train_tooltip.image
+        self.num_output_nodes_fc3_in_train_tooltip.place(relx=0.04, rely=0.63, anchor=CENTER)
+        create_tooltip(widget=self.num_output_nodes_fc3_in_train_tooltip, text="Number of output nodes in layer 5 "
+                                                                               "to use while training the model.\n"
+                                                                               "Layer 5 is a fully connected layer.\n"
+                                                                               "Expecting a natural number.")
+
+        # dropout
+        self.check_button_dropout_in_train_intvar = IntVar()
+        self.check_button_dropout_in_train_intvar.set(1)
+        self.check_button_dropout_in_train = ttk.Checkbutton(self.advanced_train_tab,
+                                                             text="Dropout",
+                                                             variable=self.check_button_dropout_in_train_intvar)
+        self.check_button_dropout_in_train.place(relx=0.157, rely=0.71, anchor=CENTER)
+        # dropout tooltip
+        self.check_button_dropout_in_train_tooltip = ttk.Label(self.advanced_train_tab)
+        self.check_button_dropout_in_train_tooltip.image = self.tooltip_icon
+        self.check_button_dropout_in_train_tooltip["image"] = self.check_button_dropout_in_train_tooltip.image
+        self.check_button_dropout_in_train_tooltip.place(relx=0.04, rely=0.71, anchor=CENTER)
+        create_tooltip(widget=self.check_button_dropout_in_train_tooltip, text="Check this to train the model "
+                                                                               "with dropout")
+
+        # drop probability
+        self.drop_prob_in_train_label = ttk.Label(self.advanced_train_tab, text="Dropout probability")
+        self.drop_prob_in_train_label.place(relx=0.212, rely=0.79, anchor=CENTER)
+        self.drop_prob_in_train_stringvar = StringVar()
+        self.drop_prob_in_train_stringvar.set(DEFAULTS["drop_prob"])
+        self.drop_prob_in_train_entry = Entry(self.advanced_train_tab, justify=CENTER,
+                                              borderwidth=0, highlightthickness=1,
+                                              highlightbackground="grey",
+                                              textvariable=self.drop_prob_in_train_stringvar,
+                                              bg="white")
+        self.drop_prob_in_train_entry.place(relx=0.685, rely=0.79, anchor=CENTER)
+        # drop prob tooltip
+        self.drop_prob_in_train_tooltip = ttk.Label(self.advanced_train_tab)
+        self.drop_prob_in_train_tooltip.image = self.tooltip_icon
+        self.drop_prob_in_train_tooltip["image"] = self.drop_prob_in_train_tooltip.image
+        self.drop_prob_in_train_tooltip.place(relx=0.04, rely=0.79, anchor=CENTER)
+        create_tooltip(widget=self.drop_prob_in_train_tooltip, text="Drop probability to use while training\n"
+                                                                    "Relevant only if dropout is set\n"
+                                                                    "Expecting a number between 0-1")
+
+    def train(self):
+        if not self.is_valid_train_inputs():
+            return
+
+        train_spectrum_path = self.train_spectrum_file_in_train_stringvar.get()
+        train_labels_path = self.train_labels_file_in_train_stringvar.get()
+        test_spectrum_path = self.test_spectrum_file_in_train_stringvar.get()
+        test_labels_path = self.test_labels_file_in_train_stringvar.get()
+
+        fruits = self.fruit_list_in_train_entry.get().split(sep=",")
+        fruits = [fruit.strip() for fruit in fruits]
+
+        kernel_size_left, kernel_size_right = self.kernel_size_in_train_stringvar.get().split(",")
+        kernel_size = (int(kernel_size_left.strip(" (")), int(kernel_size_right.strip(" )")))
+
+        padding_left, padding_right = self.padding_in_train_stringvar.get().split(",")
+        padding = (int(padding_left.strip(" (")), int(padding_right.strip(" )")))
+
+        num_channels_layer1 = int(self.num_channels_layer1_in_train_stringvar.get())
+        num_channels_layer2 = int(self.num_channels_layer2_in_train_stringvar.get())
+
+        num_output_nodes_fc1 = int(self.num_output_nodes_fc1_in_train_stringvar.get())
+        num_output_nodes_fc2 = int(self.num_output_nodes_fc2_in_train_stringvar.get())
+        num_output_nodes_fc3 = int(self.num_output_nodes_fc3_in_train_stringvar.get())
+
+        batch_normalization = bool(self.check_button_batch_norm_in_train_intvar.get())
+
+        dropout = bool(self.check_button_dropout_in_train_intvar.get())
+        drop_prob = float(self.drop_prob_in_train_stringvar.get())
+
+        epoch_num = int(self.epoch_num_in_train_stringvar.get())
+
+        saved_model_path = self.saved_model_path_in_train_stringvar.get()
+        if not saved_model_path.endswith(".pth"):
+            saved_model_path = "".join([saved_model_path, ".pth"])
+
+        # progress bar
+        self.train_button["state"] = "disable"
+        self.train_progress_bar_intvar = IntVar()
+        self.train_progress_bar_intvar.set(0)
+        self.train_progress_bar = ttk.Progressbar(self.train_tab, orient=HORIZONTAL,
+                                                  length=250, mode="indeterminate",
+                                                  variable=self.train_progress_bar_intvar,
+                                                  maximum=100)
+        self.train_progress_bar.place(relx=0.5, rely=0.775, anchor=CENTER)
+
+        train_thread_function = partial(main, train_now=True, fruits=fruits,
+                                        train_spectrum_path=train_spectrum_path,
+                                        train_labels_path=train_labels_path,
+                                        test_spectrum_path=test_spectrum_path,
+                                        test_labels_path=test_labels_path,
+                                        batch_normalization=batch_normalization,
+                                        dropout=dropout, drop_prob=drop_prob, kernel_size=kernel_size,
+                                        padding=padding,
+                                        num_channels_layer1=num_channels_layer1,
+                                        num_channels_layer2=num_channels_layer2,
+                                        fc1_amount_output_nodes=num_output_nodes_fc1,
+                                        fc2_amount_output_nodes=num_output_nodes_fc2,
+                                        fc3_amount_output_node=num_output_nodes_fc3,
+                                        model_save_path=saved_model_path,
+                                        num_epochs=epoch_num,
+                                        batch_size=1, learning_rate=0.01,
+                                        knn=False,
+                                        show_statistics=False)
+        self.train_thread = threading.Thread(target=train_thread_function)
+        self.train_thread.start()
+        self.after(50, self.update_labels_of_progress_bar, self.train_thread,
+                   self.train_progress_bar,
+                   self.train_button, self.train_progress_bar_intvar, "Train",
+                   "Training finished successfully")
 
     def design_create_dataset_tab(self):
         self.tabs_in_create_dataset_parent = ttk.Notebook(self.create_dataset_tab)
@@ -253,28 +650,9 @@ class FinalProjectGui(Tk):
                                                                   "together with the test spectrum file, make up the"
                                                                   " test dataset.")
 
-        # size of dataset
-        self.size_of_dataset_label = ttk.Label(self.advanced_create_dataset_tab, text="Size of dataset: ")
-        self.size_of_dataset_label.place(relx=0.185, rely=0.47, anchor=CENTER)
-        self.size_of_dataset_stringvar = StringVar()
-        validate_size_of_dataset_cmd = (self.register(self.validate_size_of_dataset))  # validate command
-        self.size_of_dataset_entry = Entry(self.advanced_create_dataset_tab, justify=CENTER,
-                                           borderwidth=0, highlightthickness=1, highlightbackground="grey",
-                                           textvariable=self.size_of_dataset_stringvar, bg="white",
-                                           validate='all',
-                                           validatecommand=(validate_size_of_dataset_cmd, '%P'))
-        self.size_of_dataset_entry.place(relx=0.58, rely=0.47, anchor=CENTER)
-        self.validate_size_of_dataset(text="-1")
-        # size of dataset tooltip
-        self.size_of_dataset_tooltip = ttk.Label(self.advanced_create_dataset_tab)
-        self.size_of_dataset_tooltip.image = self.tooltip_icon
-        self.size_of_dataset_tooltip["image"] = self.size_of_dataset_tooltip.image
-        self.size_of_dataset_tooltip.place(relx=0.04, rely=0.47, anchor=CENTER)
-        create_tooltip(widget=self.size_of_dataset_tooltip, text="Dataset size.\nMust be divisible by a thousand.")
-
         # train data percentage
         self.train_data_percentage_label = ttk.Label(self.advanced_create_dataset_tab, text="train data percentage : ")
-        self.train_data_percentage_label.place(relx=0.24, rely=0.55, anchor=CENTER)
+        self.train_data_percentage_label.place(relx=0.24, rely=0.47, anchor=CENTER)
         self.train_data_percentage_stringvar = StringVar()
         validate_train_data_percentage_cmd = (self.register(self.validate_train_data_percentage))  # validate command
         self.train_data_percentage_entry = Entry(self.advanced_create_dataset_tab, justify=CENTER,
@@ -282,19 +660,38 @@ class FinalProjectGui(Tk):
                                                  textvariable=self.train_data_percentage_stringvar, bg="white",
                                                  validate='all',
                                                  validatecommand=(validate_train_data_percentage_cmd, '%P'))
-        self.train_data_percentage_entry.place(relx=0.58, rely=0.55, anchor=CENTER)
+        self.train_data_percentage_entry.place(relx=0.58, rely=0.47, anchor=CENTER)
         self.validate_train_data_percentage(text="-1")  # hack to get the default value
         # train data percentage  tooltip
         self.train_data_percentage_tooltip = ttk.Label(self.advanced_create_dataset_tab)
         self.train_data_percentage_tooltip.image = self.tooltip_icon
         self.train_data_percentage_tooltip["image"] = self.train_data_percentage_tooltip.image
-        self.train_data_percentage_tooltip.place(relx=0.04, rely=0.55, anchor=CENTER)
+        self.train_data_percentage_tooltip.place(relx=0.04, rely=0.47, anchor=CENTER)
         create_tooltip(widget=self.train_data_percentage_tooltip, text="Determines how much out of the dataset will be "
                                                                        "the training set in percent %\n"
                                                                        "The rest of the data will be part of the "
                                                                        "test set.\n"
                                                                        "The size of the dataset times the train data "
                                                                        "percentage must be divisible by a thousand.")
+
+        # # size of dataset
+        # self.size_of_dataset_label = ttk.Label(self.advanced_create_dataset_tab, text="Size of dataset: ")
+        # self.size_of_dataset_label.place(relx=0.185, rely=0.55, anchor=CENTER)
+        # self.size_of_dataset_stringvar = StringVar()
+        # validate_size_of_dataset_cmd = (self.register(self.validate_size_of_dataset))  # validate command
+        # self.size_of_dataset_entry = Entry(self.advanced_create_dataset_tab, justify=CENTER,
+        #                                    borderwidth=0, highlightthickness=1, highlightbackground="grey",
+        #                                    textvariable=self.size_of_dataset_stringvar, bg="white",
+        #                                    validate='all',
+        #                                    validatecommand=(validate_size_of_dataset_cmd, '%P'))
+        # self.size_of_dataset_entry.place(relx=0.58, rely=0.55, anchor=CENTER)
+        # self.validate_size_of_dataset(text="-1")
+        # # size of dataset tooltip
+        # self.size_of_dataset_tooltip = ttk.Label(self.advanced_create_dataset_tab)
+        # self.size_of_dataset_tooltip.image = self.tooltip_icon
+        # self.size_of_dataset_tooltip["image"] = self.size_of_dataset_tooltip.image
+        # self.size_of_dataset_tooltip.place(relx=0.04, rely=0.55, anchor=CENTER)
+        # create_tooltip(widget=self.size_of_dataset_tooltip, text="Dataset size.\nMust be divisible by a thousand.")
 
     def create_dataset(self):
         if not self.is_valid_create_dataset_inputs():
@@ -348,7 +745,7 @@ class FinalProjectGui(Tk):
         else:
             test_labels_path = os.path.join(os.getcwd(), test_labels_path)
 
-        self.size_of_dataset = int(self.size_of_dataset_entry.get())
+        # self.size_of_dataset = int(self.size_of_dataset_entry.get())
         train_data_percentage = float(self.train_data_percentage_entry.get())
 
         # progress bar
@@ -356,43 +753,44 @@ class FinalProjectGui(Tk):
         self.create_dataset_progress_bar_intvar = IntVar()
         self.create_dataset_progress_bar_intvar.set(0)
         self.create_dataset_progress_bar = ttk.Progressbar(self.create_dataset_tab, orient=HORIZONTAL,
-                                                           length=250, mode="determinate",
+                                                           length=250, mode="indeterminate",
                                                            variable=self.create_dataset_progress_bar_intvar,
-                                                           maximum=self.size_of_dataset)
+                                                           maximum=100)
         self.create_dataset_progress_bar.place(relx=0.5, rely=0.775, anchor=CENTER)
-        self.create_dataset_progress_bar_label_stringvar = StringVar()
-        self.create_dataset_progress_bar_label_stringvar.set("0 %")
-        self.create_dataset_progress_bar_label = ttk.Label(self.create_dataset_tab,
-                                                           textvariable=self.create_dataset_progress_bar_label_stringvar)
-        self.create_dataset_progress_bar_label.place(relx=0.5, rely=0.72, anchor=CENTER)
-        create_dataset_thread_function = partial(main, create_dataset_now=True, root_dir=self.root_dir, fruits=fruits, sample_time=sample_time,
+        # self.create_dataset_progress_bar_label_stringvar = StringVar()
+        # self.create_dataset_progress_bar_label_stringvar.set("0 %")
+        # self.create_dataset_progress_bar_label = ttk.Label(self.create_dataset_tab,
+        #                                                    textvariable=self.create_dataset_progress_bar_label_stringvar)
+        # self.create_dataset_progress_bar_label.place(relx=0.5, rely=0.72, anchor=CENTER)
+        create_dataset_thread_function = partial(main, create_dataset_now=True, root_dir=self.root_dir, fruits=fruits,
+                                                 sample_time=sample_time,
                                                  sample_location=sample_location,
                                                  train_spectrum_path=train_spectrum_path,
                                                  train_labels_path=train_labels_path,
                                                  test_spectrum_path=test_spectrum_path,
                                                  test_labels_path=test_labels_path,
-                                                 size_of_dataset=self.size_of_dataset,
+                                                 # size_of_dataset=self.size_of_dataset,
                                                  train_data_percentage=train_data_percentage,
-                                                 create_dataset_progress_bar_intvar=self.create_dataset_progress_bar_intvar)
+                                                 stretch_data=False,
+                                                 create_dataset_progress_bar_intvar=None)
         self.create_dataset_thread = threading.Thread(target=create_dataset_thread_function)
         self.create_dataset_thread.start()
         self.after(50, self.update_labels_of_progress_bar, self.create_dataset_thread, self.create_dataset_progress_bar,
-                   self.create_dataset_button, self.create_dataset_progress_bar_label,
-                   self.create_dataset_progress_bar_label_stringvar, self.create_dataset_progress_bar_intvar)
+                   self.create_dataset_button, self.create_dataset_progress_bar_intvar, "Create Dataset",
+                   "Dataset created successfully")
 
-    def update_labels_of_progress_bar(self, thread, progress_bar, button, label, label_stringvar, progress_bar_intvar):
+    def update_labels_of_progress_bar(self, thread, progress_bar, button, progress_bar_intvar, title, message):
         if thread.is_alive():
-            percent = (progress_bar_intvar.get() / progress_bar["maximum"]) * 100
-            label_stringvar.set("{} %".format(int(percent)))
-            self.after(500, self.update_labels_of_progress_bar, thread, progress_bar, button, label, label_stringvar,
-                       progress_bar_intvar)
+            # percent = (progress_bar_intvar.get() / progress_bar["maximum"]) * 100
+            new_progress_bar_value = (progress_bar_intvar.get() % 100) + 10
+            progress_bar_intvar.set(new_progress_bar_value)
+            self.after(500, self.update_labels_of_progress_bar, thread, progress_bar, button, progress_bar_intvar,
+                       title, message)
         else:
-            label_stringvar.set("100 %")
-            messagebox.showinfo(title="Create Dataset",
-                                message="Dataset created successfully")
+            messagebox.showinfo(title=title,
+                                message=message)
             button["state"] = "normal"
             progress_bar.destroy()
-            label.destroy()
 
     def design_predict_tab(self):
         self.tabs_in_predict_parent = ttk.Notebook(self.predict_tab)
@@ -645,6 +1043,51 @@ class FinalProjectGui(Tk):
                 widget.configure(background=bg_color_to_flash)
             self.after(250, self.flash_widget, widget, bg_color_to_flash, prev_bg_color, count+1)
 
+    def is_valid_train_inputs(self):
+        illegal_inputs = []
+
+        fruits = self.fruit_list_in_train_entry.get()
+        if not fruits:
+            illegal_inputs.append(self.fruit_list_in_train_entry)
+
+        train_spectrum_path = self.train_spectrum_file_in_train_stringvar.get()
+        if not train_spectrum_path:
+            illegal_inputs.append(self.train_spectrum_file_in_train_entry)
+        if not os.path.exists(train_spectrum_path) and self.train_spectrum_file_in_train_entry not in illegal_inputs:
+            illegal_inputs.append(self.train_spectrum_file_in_train_entry)
+
+        train_labels_path = self.train_labels_file_in_train_stringvar.get()
+        if not train_labels_path:
+            illegal_inputs.append(self.train_labels_file_in_train_entry)
+        if not os.path.exists(train_labels_path) and self.train_labels_file_in_train_entry not in illegal_inputs:
+            illegal_inputs.append(self.train_labels_file_in_train_entry)
+
+        test_spectrum_path = self.test_spectrum_file_in_train_stringvar.get()
+        if not test_spectrum_path:
+            illegal_inputs.append(self.test_spectrum_file_in_train_entry)
+        if not os.path.exists(test_spectrum_path) and self.test_spectrum_file_in_train_entry not in illegal_inputs:
+            illegal_inputs.append(self.test_spectrum_file_in_train_entry)
+
+        test_labels_path = self.test_labels_file_in_train_stringvar.get()
+        if not test_labels_path:
+            illegal_inputs.append(self.test_labels_file_in_train_entry)
+        if not os.path.exists(test_labels_path) and self.test_labels_file_in_train_entry not in illegal_inputs:
+            illegal_inputs.append(self.test_labels_file_in_train_entry)
+
+        try:
+            num_epochs = int(self.epoch_num_in_train_stringvar.get())
+        except ValueError:
+            illegal_inputs.append(self.epoch_num_in_train_entry)
+
+        saved_model_path = self.saved_model_path_in_train_stringvar.get()
+        if not saved_model_path:
+            illegal_inputs.append(self.saved_model_path_in_train_entry)
+
+        for illegal_input in illegal_inputs:
+            self.flash_widget(illegal_input)
+
+        return illegal_inputs == []
+
     def is_valid_create_dataset_inputs(self):
         illegal_inputs = []
         fruits = self.fruit_list_in_create_dataset_entry.get()
@@ -694,17 +1137,17 @@ class FinalProjectGui(Tk):
             if self.test_labels_path_entry not in illegal_inputs:
                 illegal_inputs.append(self.test_labels_path_entry)
 
-        size_of_dataset = self.size_of_dataset_entry.get()
-        if size_of_dataset:
-            if int(size_of_dataset) % 1000 != 0:
-                illegal_inputs.append(self.size_of_dataset_entry)
-        else:
-            illegal_inputs.append(self.size_of_dataset_entry)
-
-        if size_of_dataset and train_data_percentage:
-            if (int(size_of_dataset) * float(train_data_percentage)) % 1000 != 0:
-                illegal_inputs.append(self.train_data_percentage_entry)
-                illegal_inputs.append(self.size_of_dataset_entry)
+        # size_of_dataset = self.size_of_dataset_entry.get()
+        # if size_of_dataset:
+        #     if int(size_of_dataset) % 1000 != 0:
+        #         illegal_inputs.append(self.size_of_dataset_entry)
+        # else:
+        #     illegal_inputs.append(self.size_of_dataset_entry)
+        #
+        # if size_of_dataset and train_data_percentage:
+        #     if (int(size_of_dataset) * float(train_data_percentage)) % 1000 != 0:
+        #         illegal_inputs.append(self.train_data_percentage_entry)
+        #         illegal_inputs.append(self.size_of_dataset_entry)
 
         try:
             rootdir = self.root_dir
@@ -816,6 +1259,32 @@ class FinalProjectGui(Tk):
             if root_dir != "":  # The user didn't pick anything
                 self.root_dir = root_dir
                 self.rootdir_in_create_dataset_label.configure(text=root_dir)
+
+        elif data_or_model_file_path == TRAIN_SPECTRUM_PATH:
+            filename = filedialog.askopenfilename(initialdir="./", title="Select train spectrum file",
+                                                  filetype=(("data files", "*.npy"), ("all files", "*.*")))
+            if filename != "":  # The user didn't pick anything
+                self.train_spectrum_file_in_train_stringvar.set(filename)
+
+        elif data_or_model_file_path == TRAIN_LABELS_PATH:
+            filename = filedialog.askopenfilename(initialdir="./", title="Select train labels file",
+                                                  filetype=(("data files", "*.npy"), ("all files", "*.*")))
+            if filename != "":  # The user didn't pick anything
+                self.train_labels_file_in_train_stringvar.set(filename)
+
+        elif data_or_model_file_path == TEST_SPECTRUM_PATH:
+            filename = filedialog.askopenfilename(initialdir="./", title="Select test spectrum file",
+                                                  filetype=(("data files", "*.npy"), ("all files", "*.*")))
+            if filename != "":  # The user didn't pick anything
+                self.test_spectrum_file_in_train_stringvar.set(filename)
+
+        elif data_or_model_file_path == TEST_LABELS_PATH:
+            filename = filedialog.askopenfilename(initialdir="./", title="Select test labels file",
+                                                  filetype=(("data files", "*.npy"), ("all files", "*.*")))
+            if filename != "":  # The user didn't pick anything
+                self.test_labels_file_in_train_stringvar.set(filename)
+
+
 
     def validate_fruit_list(self, text):
         if text == "-1":
