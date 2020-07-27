@@ -92,6 +92,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
             cross_validation_predictions_of_last_epoch = []
             statistics_of_all_iterations = []
             for i in range(cross_validation_iterations):
+                print("Cross validation iteration: {}/{}".format(i+1, cross_validation_iterations))
                 # Get the dataset
                 train_data_loader = DataLoader("train", train_spectrum_path=train_spectrum_path,
                                                train_labels_path=train_labels_path,
@@ -103,7 +104,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                 # initialize the neural net
                 model = CNN(amount_of_labels=len(fruit_label_enum), batch_normalization=batch_normalization,
                             dropout=dropout, drop_prob=drop_prob, kernel_size=kernel_size, padding=padding,
-                            data_width=data_width, data_height=2, num_channels_layer1=num_channels_layer1,
+                            data_width=data_width, data_height=1, num_channels_layer1=num_channels_layer1,
                             num_channels_layer2=num_channels_layer2, fc1_amount_output_nodes=fc1_amount_output_nodes,
                             fc2_amount_output_nodes=fc2_amount_output_nodes, fc3_amount_output_node=fc3_amount_output_node)
 
@@ -143,7 +144,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                         existing_labels = np.hstack((existing_labels, labels))
 
                 amount_of_data = amount_train_data + amount_test_data
-                existing_data = existing_data.reshape((amount_of_data, 2, data_width))
+                existing_data = existing_data.reshape((amount_of_data, data_width))
 
                 train_data_percentage = math.ceil(10 * (amount_train_data / amount_of_data)) / 10
                 train_data, train_labels, test_data, test_labels = train_test_split(existing_data=existing_data,
@@ -179,7 +180,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
         model = load_model(model_save_path, amount_of_labels=len(fruit_label_enum),
                            batch_normalization=batch_normalization, dropout=dropout,
                            drop_prob=drop_prob, kernel_size=kernel_size, padding=padding, data_width=data_width,
-                           data_height=2, num_channels_layer1=num_channels_layer1,
+                           data_height=1, num_channels_layer1=num_channels_layer1,
                            num_channels_layer2=num_channels_layer2, fc1_amount_output_nodes=fc1_amount_output_nodes,
                            fc2_amount_output_nodes=fc2_amount_output_nodes,
                            fc3_amount_output_node=fc3_amount_output_node)
@@ -216,11 +217,11 @@ if __name__ == '__main__':
     train_labels_path = r"dataset/train_labels.npy"
     test_labels_path = r"dataset/test_labels.npy"
 
-    main(create_dataset_now=True, num_epochs=20, kernel_size=(2, 2), padding=(1, 1), size_of_dataset=5000,
+    main(create_dataset_now=True, num_epochs=20, kernel_size=(1, 2), padding=(0, 0), size_of_dataset=5000,
          model_save_path=r"trained_models/model_dont_use.pth",
          batch_size=1, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
          train_spectrum_path=train_spectrum_path, test_spectrum_path=test_spectrum_path,
          train_labels_path=train_labels_path, test_labels_path=test_labels_path, show_statistics=True,
-         stretch_data=False, sample_location="anal", sample_time="after 5", fruits=fruits, data_width=2100,
+         stretch_data=False, sample_location="anal", sample_time="after 5", fruits=fruits, data_width=800,
          num_channels_layer1=30, num_channels_layer2=6, fc1_amount_output_nodes=500, fc2_amount_output_nodes=500,
          fc3_amount_output_node=100, tolerance=100, number_of_samples_to_alter=250, knn=False, sample_type="pos")

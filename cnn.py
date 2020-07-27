@@ -107,39 +107,39 @@ class CNN(nn.Module):
         h_out, w_out = data_shape_layer2_after_maxpool
 
         # fully connected layer
-        self.fc1 = nn.Linear(h_out * w_out * num_channels_layer2, fc1_amount_output_nodes)
+        self.fc1 = nn.Linear(w_out * num_channels_layer2, fc1_amount_output_nodes)
         self.fc2 = nn.Linear(fc1_amount_output_nodes, fc2_amount_output_nodes)
         self.fc3 = nn.Linear(fc2_amount_output_nodes, fc3_amount_output_node)
         self.fc4 = nn.Linear(fc3_amount_output_node, amount_of_labels)
 
-        # paper architecture
-        self.paper_conv1 = nn.Sequential(nn.Conv2d(1, num_channels_layer1, kernel_size=kernel_size, padding=padding),
-                                         nn.BatchNorm2d(num_channels_layer1),
-                                         nn.ReLU())
-
-        self.paper_conv2 = nn.Sequential(nn.Conv2d(num_channels_layer1, num_channels_layer2, kernel_size=kernel_size,
-                                         padding=padding),
-                                         nn.BatchNorm2d(num_channels_layer2),
-                                         nn.ReLU(),
-                                         nn.MaxPool2d(kernel_size),
-                                         nn.Dropout(p=0.25))
-
-        data_shape_layer1_after_conv2d = calculate_output_shape(layer_name="conv", h_in=data_height, w_in=data_width,
-                                                                kernel_size=kernel_size, padding=padding)
-        h_out, w_out = data_shape_layer1_after_conv2d
-
-        # calculate shape of data after layer 2
-        data_shape_layer2_after_conv2d = calculate_output_shape(layer_name="conv", h_in=h_out, w_in=w_out,
-                                                                kernel_size=kernel_size, padding=padding)
-        h_out, w_out = data_shape_layer2_after_conv2d
-        data_shape_layer2_after_maxpool = calculate_output_shape(layer_name="pool", h_in=h_out, w_in=w_out,
-                                                                 kernel_size=kernel_size)
-        h_out, w_out = data_shape_layer2_after_maxpool
-
-        self.paper_fc1 = nn.Sequential(nn.Linear(h_out * w_out * num_channels_layer2, fc1_amount_output_nodes),
-                                       nn.ReLU(),
-                                       nn.Dropout(p=0.5))
-        self.paper_fc2 = nn.Linear(fc1_amount_output_nodes, amount_of_labels)
+        # # paper architecture
+        # self.paper_conv1 = nn.Sequential(nn.Conv2d(1, num_channels_layer1, kernel_size=kernel_size, padding=padding),
+        #                                  nn.BatchNorm2d(num_channels_layer1),
+        #                                  nn.ReLU())
+        #
+        # self.paper_conv2 = nn.Sequential(nn.Conv2d(num_channels_layer1, num_channels_layer2, kernel_size=kernel_size,
+        #                                  padding=padding),
+        #                                  nn.BatchNorm2d(num_channels_layer2),
+        #                                  nn.ReLU(),
+        #                                  nn.MaxPool2d(kernel_size),
+        #                                  nn.Dropout(p=0.25))
+        #
+        # data_shape_layer1_after_conv2d = calculate_output_shape(layer_name="conv", h_in=data_height, w_in=data_width,
+        #                                                         kernel_size=kernel_size, padding=padding)
+        # h_out, w_out = data_shape_layer1_after_conv2d
+        #
+        # # calculate shape of data after layer 2
+        # data_shape_layer2_after_conv2d = calculate_output_shape(layer_name="conv", h_in=h_out, w_in=w_out,
+        #                                                         kernel_size=kernel_size, padding=padding)
+        # h_out, w_out = data_shape_layer2_after_conv2d
+        # data_shape_layer2_after_maxpool = calculate_output_shape(layer_name="pool", h_in=h_out, w_in=w_out,
+        #                                                          kernel_size=kernel_size)
+        # h_out, w_out = data_shape_layer2_after_maxpool
+        #
+        # self.paper_fc1 = nn.Sequential(nn.Linear(h_out * w_out * num_channels_layer2, fc1_amount_output_nodes),
+        #                                nn.ReLU(),
+        #                                nn.Dropout(p=0.5))
+        # self.paper_fc2 = nn.Linear(fc1_amount_output_nodes, amount_of_labels)
 
     def forward(self, x):
         out = self.layer1(x)

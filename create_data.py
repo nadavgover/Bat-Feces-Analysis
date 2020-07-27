@@ -202,12 +202,13 @@ def __get_existing_data(data_files, data_width=2100, fruits=("apple", "banana", 
             continue
 
         data_read = read_data(filename=data_file)
-        data_numpy = np.vstack((np.array(data_read["x"]), np.array(data_read["y"])))
+        data_numpy = np.array(data_read["y"])
+        # data_numpy = np.vstack((np.array(data_read["x"]), np.array(data_read["y"])))
 
         # make all the data the same size, clip the end of it. The end is not interesting anyway
-        if data_numpy.shape[1] <= data_width:
+        if data_numpy.shape[0] <= data_width:
             continue
-        data_numpy = data_numpy[:, 0:data_width]
+        data_numpy = data_numpy[0:data_width]
 
         if existing_data is None:
             existing_data = data_numpy
@@ -218,7 +219,7 @@ def __get_existing_data(data_files, data_width=2100, fruits=("apple", "banana", 
 
         amount_of_data += 1
 
-    existing_data = existing_data.reshape((amount_of_data, 2, data_width))
+    existing_data = existing_data.reshape((amount_of_data, data_width))
     return existing_data, existing_labels
 
 
@@ -273,7 +274,7 @@ def __get_label(file_path, fruits):
 
 if __name__ == '__main__':
     create_now = True
-    fruits = ("apple", "banana")
+    fruits = ("apple", "banana", "mix")
     if create_now:
         valid_files, _ = get_valid_and_invalid_files(root_dir="YOMIRAN", validate_hierarchy=True,
                                                      validate_filename_format=True, validate_empty_file=True)

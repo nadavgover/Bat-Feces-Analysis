@@ -63,11 +63,11 @@ class DataLoader(object):
                     else:
                         first_dimension_shape = current_spectrum_chunk.shape[0] - i
 
-                    spectrum_batch = current_spectrum_chunk[i: i+self.batch_size, :, :].reshape((first_dimension_shape, 1, 2, -1))
+                    spectrum_batch = current_spectrum_chunk[i: i+self.batch_size, :].reshape((first_dimension_shape, 1, 1, -1))
                     labels_batch = current_labels_chunk[i:i+self.batch_size].reshape((first_dimension_shape,))
                     if self.transform:
                         spectrum_batch = np.reshape(spectrum_batch, (-1, 1))
-                        yield self.transform(spectrum_batch).reshape(first_dimension_shape, 1, 2, -1), labels_batch
+                        yield self.transform(spectrum_batch).reshape(first_dimension_shape, 1, 1, -1), labels_batch
                     else:
                         yield spectrum_batch, labels_batch
             except StopIteration:
