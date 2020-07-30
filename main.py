@@ -231,11 +231,12 @@ if __name__ == '__main__':
     train_labels_path = r"dataset/train_labels.npy"
     test_labels_path = r"dataset/test_labels.npy"
 
-    main(create_dataset_now=True, num_epochs=20, kernel_size=(1, 2), padding=(0, 0), size_of_dataset=5000,
+    main(create_dataset_now=True, num_epochs=100, kernel_size=(1, 2), padding=(0, 0), size_of_dataset=5000,
          model_save_path=r"trained_models/model_dont_use.pth",
          batch_size=1, train_now=True, predict_now=False, file_to_predict="banana neg.txt",
          train_spectrum_path=train_spectrum_path, test_spectrum_path=test_spectrum_path,
          train_labels_path=train_labels_path, test_labels_path=test_labels_path, show_statistics=True,
-         stretch_data=False, sample_location="anal", sample_time="after 5", fruits=fruits, data_width=800,
-         num_channels_layer1=30, num_channels_layer2=6, fc1_amount_output_nodes=500, fc2_amount_output_nodes=500,
-         fc3_amount_output_node=100, tolerance=100, number_of_samples_to_alter=250, knn=True, sample_type="pos")
+         stretch_data=False, sample_location="anal", sample_time="after 5", fruits=fruits, data_width=2100,
+         num_channels_layer1=3, num_channels_layer2=6, fc1_amount_output_nodes=200, fc2_amount_output_nodes=500,
+         fc3_amount_output_node=100, tolerance=100, number_of_samples_to_alter=250, knn=False, sample_type="pos",
+         cross_validation_iterations=5)

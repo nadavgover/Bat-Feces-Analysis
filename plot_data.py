@@ -46,8 +46,15 @@ def plot_raw_data1(data_files, labels, color_palette="Set2", max_weight=None, fa
     # plt.legend(loc='upper right')
 
 
-def plot_violin_plot_of_all_data(root_dir="YOMIRAN"):
-    pass
+def plot_box_plot(test_accuracies):
+    data_dict = {"Test Accuracy": test_accuracies}
+    data_df = pd.DataFrame(data=data_dict)
+    ax = sns.boxplot(y=data_df["Test Accuracy"])
+    median = data_df["Test Accuracy"].median()
+    n = len(test_accuracies)
+    ax.text(0, median + 0.03, "n: {}".format(n), horizontalalignment='center', size='small', color='b',
+            weight='semibold')
+    plt.show()
 
 
 def plot_raw_data_on_same_graph(datas, legend_labels, show_plot=False):
