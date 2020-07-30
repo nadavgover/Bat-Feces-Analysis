@@ -4,6 +4,7 @@ from sklearn.preprocessing import minmax_scale
 import copy
 import numpy as np
 import math
+import statistics as stat
 
 from validate_data import get_valid_and_invalid_files
 from create_data import create_dataset, train_test_split, save_to_file
@@ -88,6 +89,7 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
 
             cross_validation_losses = []
             cross_validation_accuracies_train = []
+            cross_validation_accuracies_test = []
             cross_validation_true_labels = []
             cross_validation_predictions_of_last_epoch = []
             statistics_of_all_iterations = []
@@ -116,7 +118,12 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                                          train_dataset_size=amount_train_data)
 
                 statistics_of_all_iterations.append(statistics)
-                # losses, accuracies_train, accuracies_test, true_labels, predictions_of_last_epoch = statistics
+                losses, accuracies_train, accuracies_test, true_labels, predictions_of_last_epoch = statistics
+                cross_validation_losses.extend([losses[-1]])
+                cross_validation_accuracies_train.extend([accuracies_train[-1]])
+                cross_validation_accuracies_test.extend([accuracies_test[-1]])
+                cross_validation_true_labels.extend(true_labels),
+                cross_validation_predictions_of_last_epoch.extend(list(predictions_of_last_epoch))
 
                 # shuffle the data for cross validation
                 existing_data = None
@@ -157,6 +164,12 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                 save_to_file(file=Path(test_spectrum_path), data_to_save=test_data, mode="wb")
                 save_to_file(file=Path(test_labels_path), data_to_save=test_labels, mode="wb")
 
+            accuracies_test_mean = stat.mean(cross_validation_accuracies_test)
+            accuracies_test_std = stat.stdev(cross_validation_accuracies_test)
+            print("Test accuracies mean: {}".format(accuracies_test_mean))
+            print("Test accuracies standard deviation: {}".format(accuracies_test_std))
+            plot_data.plot_box_plot(test_accuracies=cross_validation_accuracies_test)
+
             # plot the statistics
             if show_statistics:
                 # plot_data.plot_train_statistics(x_values=range(len(losses)), y_values=losses, x_label="Epoch",
@@ -166,15 +179,16 @@ def main(train_spectrum_path=r"dataset/train_spectrum.npy", test_spectrum_path=r
                 # plot_data.plot_train_statistics(x_values=range(len(accuracies_test)), y_values=accuracies_test,
                 #                                 x_label="Epoch", y_label="Test accuracy")
 
-                statistics = statistics_of_all_iterations[0]
-                losses, accuracies_train, accuracies_test, true_labels, predictions_of_last_epoch = statistics
-                plot_data.plot_train_statistics1(losses=losses, train_accuracy=accuracies_train,
-                                                 test_accuracy=accuracies_test)
+                # statistics = statistics_of_all_iterations[0]
+                # losses, accuracies_train, accuracies_test, true_labels, predictions_of_last_epoch = statistics
+                # plot_data.plot_train_statistics1(losses=losses, train_accuracy=accuracies_train,
+                #                                  test_accuracy=accuracies_test)
 
-                plot_data.plot_confusion_matrix(true_labels=true_labels, predictions=predictions_of_last_epoch,
-                                                fruits=fruits, show_null_values=True)
-                plot_data.plot_classification_report(true_labels=true_labels, predictions=predictions_of_last_epoch,
-                                                     show_plot=True)
+                plot_data.plot_confusion_matrix(true_labels=cross_validation_true_labels,
+                                                predictions=cross_validation_predictions_of_last_epoch,
+                                                fruits=fruits, show_null_values=True, show_plot=True)
+                # plot_data.plot_classification_report(true_labels=true_labels, predictions=predictions_of_last_epoch,
+                #                                      show_plot=True)
 
     if predict_now:
         model = load_model(model_save_path, amount_of_labels=len(fruit_label_enum),
@@ -224,4 +238,4 @@ if __name__ == '__main__':
          train_labels_path=train_labels_path, test_labels_path=test_labels_path, show_statistics=True,
          stretch_data=False, sample_location="anal", sample_time="after 5", fruits=fruits, data_width=800,
          num_channels_layer1=30, num_channels_layer2=6, fc1_amount_output_nodes=500, fc2_amount_output_nodes=500,
-         fc3_amount_output_node=100, tolerance=100, number_of_samples_to_alter=250, knn=False, sample_type="pos")
+         fc3_amount_output_node=100, tolerance=100, number_of_samples_to_alter=250, knn=True, sample_type="pos")

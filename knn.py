@@ -22,13 +22,13 @@ class KNN:
         return accuracy
 
     def calculate_distance_of_one_test_data(self, test_data):
-        test_data = test_data.view(2, -1)
-        test_y_axis = test_data[1]  # We only care about y data, x is the close enough in all the data
+        test_data = test_data.view(-1, )
+        # test_y_axis = test_data[1]  # We only care about y data, x is the close enough in all the data
         distances_and_corresponding_label = []
         for train_spectrum, train_labels in copy.deepcopy(self.train_data_loader).load_data():
-            train_spectrum = train_spectrum.view(2, -1)
-            train_y_axis = train_spectrum[1]
-            distance = train_y_axis - test_y_axis
+            train_spectrum = train_spectrum.view(-1, )
+            # train_y_axis = train_spectrum[1]
+            distance = train_spectrum - test_data
             distance *= distance  # get the square for pithagoras
             distance = distance.sum()
             distances_and_corresponding_label.append((math.sqrt(distance), train_labels[0]))
