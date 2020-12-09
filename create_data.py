@@ -2,9 +2,11 @@ import numpy as np
 import random
 import copy
 from pathlib import Path
+from sklearn.decomposition import PCA
 
 from common import read_data
 from validate_data import get_valid_and_invalid_files
+from plot_data import plot_pca, plot_3d_pca
 
 # FRUITS = ["apple", "banana", "mix"]
 SAMPLE_TIMES = ["after 5", "after 8", "before", "all"]
@@ -16,12 +18,22 @@ def create_dataset(data_files, fruits=("apple", "banana", "mix"), sample_time="a
                    tolerance=1, number_of_samples_to_alter=100, size_of_dataset=60000, train_data_percentage=0.8,
                    train_spectrum_path=Path("dataset/train_spectrum.npy"), train_labels_path=Path("dataset/train_labels.npy"),
                    test_spectrum_path=Path("dataset/test_spectrum.npy"), test_labels_path=Path("dataset/test_labels.npy"),
-                   data_width=2100, stretch_data=False, create_dataset_progress_bar_intvar=None, sample_type="pos"):
+                   data_width=2100, stretch_data=False, create_dataset_progress_bar_intvar=None, sample_type="pos",
+                   n_components=None):
 
     # Get existing data
-    existing_data, existing_labels = __get_existing_data(fruits=fruits, data_files=data_files, sample_time=sample_time,
-                                                         sample_location=sample_location, data_width=data_width,
-                                                         sample_type=sample_type)
+    existing_data, existing_labels = get_existing_data(fruits=fruits, data_files=data_files, sample_time=sample_time,
+                                                       sample_location=sample_location, data_width=data_width,
+                                                       sample_type=sample_type)
+    # Apply pca
+    if not n_components:
+        n_components = min(existing_data.shape[0], existing_data.shape[1])
+    pca = PCA(n_components=n_components)
+    existing_data = pca.fit_transform(existing_data)
+    if existing_data.shape[1] == 2:
+        plot_pca(existing_data=existing_data, existing_labels=existing_labels)
+    elif existing_data.shape[1] == 3:
+        plot_3d_pca(existing_data=existing_data, existing_labels=existing_labels)
 
     if stretch_data:
         train_dataset_size = int(size_of_dataset * train_data_percentage)
@@ -142,8 +154,8 @@ def save_to_file(file, data_to_save, mode):
         np.save(f, data_to_save)
 
 
-def __get_existing_data(data_files, data_width=2100, fruits=("apple", "banana", "mix"), sample_time="after 5",
-                        sample_location="anal", sample_type="pos"):
+def get_existing_data(data_files, data_width=2100, fruits=("apple", "banana", "mix"), sample_time="after 5",
+                      sample_location="anal", sample_type="pos"):
     if type(sample_time) == list:
         for _sample_time in sample_time:
             if _sample_time.lower() not in SAMPLE_TIMES:

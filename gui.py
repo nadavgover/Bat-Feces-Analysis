@@ -15,7 +15,7 @@ TRAIN_SPECTRUM_PATH = 3
 TRAIN_LABELS_PATH = 4
 TEST_SPECTRUM_PATH = 5
 TEST_LABELS_PATH = 6
-DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_size": "(2, 2)", "padding": "(1, 1)",
+DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_size": "(1, 2)", "padding": "(0, 0)",
             "data_width": "2100", "confidence_threshold": "0.7", "root_dir": "YOMIRAN",
             "sample_times": ["after 5", "after 8", "before", "after 5, after 8", "after 5, before",
                              "after 8, before", "all"],
@@ -23,7 +23,7 @@ DEFAULTS = {"model_path": "model.pth", "fruits": "apple, banana, mix", "kernel_s
             "train_spectrum_path": "train_spectrum",
             "test_spectrum_path": "test_spectrum", "train_labels_path": "train_labels",
             "test_labels_path": "test_labels", "dataset_size": "10000", "train_data_percentage": "0.8",
-            "dataset_folder_name": "dataset", "fc1_amount_output_nodes": "500", "fc2_amount_output_nodes": "500",
+            "dataset_folder_name": "dataset", "fc1_amount_output_nodes": "100", "fc2_amount_output_nodes": "500",
             "fc3_amount_output_nodes": "100", "num_channels_layer1": "30", "num_channels_layer2": "6",
             "batch_normalization": "True", "drop_prob": 0.2, "epoch_num": 50}
 
@@ -1245,7 +1245,7 @@ class FinalProjectGui(Tk):
                                       num_channels_layer2=num_channels_layer2,
                                       fc1_amount_output_nodes=num_output_nodes_fc1,
                                       fc2_amount_output_nodes=num_output_nodes_fc2,
-                                      fc3_amount_output_node=num_output_nodes_fc3)
+                                      fc3_amount_output_node=num_output_nodes_fc3, n_components=5)
 
         messagebox.showinfo(title="Prediction",
                             message="Prediction: {}\tConfidence: {:.3f}%".format(prediction, confidence*100))

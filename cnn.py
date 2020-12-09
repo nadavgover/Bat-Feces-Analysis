@@ -6,6 +6,7 @@ from torch.autograd import Variable
 import numpy as np
 import functools
 import time
+import torch.nn.functional as F
 
 
 from data_loader import DataLoader
@@ -55,8 +56,9 @@ def calculate_output_shape(layer_name, h_in, w_in, kernel_size=(1, 10), padding=
 
 class CNN(nn.Module):
     def __init__(self, batch_normalization=True, dropout=True, drop_prob=0.3, kernel_size=(1, 10), padding=(1, 5),
-                 amount_of_labels=3, data_width=2100, data_height=2, num_channels_layer1=3, num_channels_layer2=6,
-                 fc1_amount_output_nodes=1000, fc2_amount_output_nodes=500, fc3_amount_output_node=100):
+                 amount_of_labels=3, data_width=2100, data_height=1, num_channels_layer1=3, num_channels_layer2=6,
+                 fc1_amount_output_nodes=1000, fc2_amount_output_nodes=500, fc3_amount_output_node=100,
+                 n_components=10):
 
         super(CNN, self).__init__()
 
@@ -107,7 +109,7 @@ class CNN(nn.Module):
         h_out, w_out = data_shape_layer2_after_maxpool
 
         # fully connected layer
-        self.fc1 = nn.Linear(w_out * num_channels_layer2, fc1_amount_output_nodes)
+        self.fc1 = nn.Linear(n_components, fc1_amount_output_nodes)
         self.fc2 = nn.Linear(fc1_amount_output_nodes, fc2_amount_output_nodes)
         self.fc3 = nn.Linear(fc2_amount_output_nodes, fc3_amount_output_node)
         self.fc4 = nn.Linear(fc3_amount_output_node, amount_of_labels)
@@ -142,17 +144,20 @@ class CNN(nn.Module):
         # self.paper_fc2 = nn.Linear(fc1_amount_output_nodes, amount_of_labels)
 
     def forward(self, x):
-        out = self.layer1(x)
-        out = self.dropout(out)
-        out = self.layer2(out)
-        out = self.dropout(out)
-        out = out.view(out.size(0), -1)
-        out = self.fc1(out)
-        out = self.dropout(out)
-        out = self.fc2(out)
-        out = self.dropout(out)
-        out = self.fc3(out)
-        out = self.dropout(out)
+        # out = self.layer1(x)
+        # out = self.dropout(out)
+        # out = self.layer2(out)
+        # out = self.dropout(out)
+        out = x.view(x.size(0), -1)
+        out = F.relu(self.fc1(out))
+        # out = self.fc1(out)
+        # out = self.dropout(out)
+        out = F.relu(self.fc2(out))
+        # out = self.fc2(out)
+        # out = self.dropout(out)
+        out = F.relu(self.fc3(out))
+        # out = self.fc3(out)
+        # out = self.dropout(out)
         out = self.fc4(out)
         return out
 

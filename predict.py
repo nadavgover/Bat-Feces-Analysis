@@ -3,6 +3,7 @@ import torchvision.transforms as transforms
 from sklearn.preprocessing import minmax_scale
 from torch.autograd import Variable
 import numpy as np
+from sklearn.decomposition import PCA
 import data_loader
 
 from cnn import CNN, compose
@@ -45,10 +46,10 @@ def predict_test_dataset(model, fruit_label_enum=create_fruit_labels(fruits=("ap
                 print("False prediction")
 
 
-def predict(model, data_file, transform=None, fruit_label_enum=create_fruit_labels(fruits=("apple", "banana", "mix")),
+def predict(model, data_file, pca, transform=None, fruit_label_enum=create_fruit_labels(fruits=("apple", "banana", "mix")),
             data_width=2100, confidence_threshold=0.7):
 
-    data_to_predict = __get_data_to_predict(data_file=data_file, data_width=data_width)
+    data_to_predict = __get_data_to_predict(data_file=data_file, data_width=data_width, pca=pca)
 
     # preparation for moving to predicting from a directory and not a single file
     amount_of_data = data_to_predict.shape[0]
@@ -60,9 +61,9 @@ def predict(model, data_file, transform=None, fruit_label_enum=create_fruit_labe
 
     if transform:
         data_to_predict = np.reshape(data_to_predict, (-1, 1))
-        data_to_predict = transform(data_to_predict).reshape(amount_of_data, 1, 2, -1)
+        data_to_predict = transform(data_to_predict).reshape(amount_of_data, 1, 1, -1)
     else:
-        data_to_predict = torch.from_numpy(data_to_predict.reshape(amount_of_data, 1, 2, -1))
+        data_to_predict = torch.from_numpy(data_to_predict.reshape(amount_of_data, 1, 1, -1))
 
     # total = 0.0
     # correct = 0.0
@@ -70,7 +71,7 @@ def predict(model, data_file, transform=None, fruit_label_enum=create_fruit_labe
         # if transform:
         #     spectrum = transform(spectrum).reshape(1, 1, 2, -1)
         # else:
-        spectrum = spectrum.view(1, 1, 2, -1)
+        spectrum = spectrum.view(1, 1, 1, -1)
 
         # this line also works (not as good), but don't do the transform above
         # spectrum = torch.from_numpy(spectrum.reshape(1, 1, 2, -1))
@@ -91,13 +92,25 @@ def predict(model, data_file, transform=None, fruit_label_enum=create_fruit_labe
         return confidence.item(), prediction
 
 
-def __get_data_to_predict(data_file, data_width):
+def __get_data_to_predict(data_file, data_width, pca):
     data_read = read_data(filename=data_file)
-    data_numpy = np.vstack((np.array(data_read["x"]), np.array(data_read["y"])))
+    data_numpy = np.array(data_read["y"])
 
     # make all the data the same size, clip the end of it. The end is not interesting anyway
-    data_numpy = data_numpy[:, 0:data_width]
-    return data_numpy.reshape((1, 2, data_width))
+    data_numpy = data_numpy[:data_width]
+
+    data_pca = pca.transform(data_numpy.reshape(1, -1))
+    return data_pca.reshape((1, 1, -1))
+    # # so we can apply pca
+    # for _ in range(n_components - 1):
+    #     data_numpy = np.vstack((data_numpy, np.random.randint(100000, size=data_width)))
+    # # data_numpy = np.vstack((np.array(data_read["x"]), np.array(data_read["y"])))
+    #
+    # # Apply pca
+    #
+    # pca = PCA(n_components=n_components)
+    # data_numpy = pca.fit_transform(data_numpy)
+    # return data_numpy[0].reshape((1, 1, -1))
 
 
 def load_model(path_to_model, **model_kwargs):

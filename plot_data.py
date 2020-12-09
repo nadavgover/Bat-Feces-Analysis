@@ -46,8 +46,67 @@ def plot_raw_data1(data_files, labels, color_palette="Set2", max_weight=None, fa
     # plt.legend(loc='upper right')
 
 
-def plot_violin_plot_of_all_data(root_dir="YOMIRAN"):
-    pass
+def plot_pca(existing_data, existing_labels, color_palette="Set2"):
+    x_data = []
+    y_data = []
+    for data in existing_data:
+        x_data.append(data[0])
+        y_data.append(data[1])
+
+    data_dict = {"Principal Component - 1": x_data, "Principal Component - 2": y_data, "Fruit": existing_labels}
+    data_df = pd.DataFrame(data=data_dict)
+    # plot all on same graph
+    sns.lmplot(x="Principal Component - 1", y="Principal Component - 2", data=data_df, fit_reg=False, hue='Fruit',
+               legend=True, legend_out=False, palette=color_palette, scatter_kws={"s": 10})
+    plt.show()
+
+
+def plot_3d_pca(existing_data, existing_labels, color_palette="Set2"):
+    x_data = []
+    y_data = []
+    z_data = []
+    for data in existing_data:
+        x_data.append(data[0])
+        y_data.append(data[1])
+        z_data.append(data[2])
+
+    color = pd.Categorical(existing_labels)
+    color = color._codes
+    # data_dict = {"PC1": x_data, "PC2": y_data, "PC3": z_data, "Fruit": existing_labels}
+    # data_df = pd.DataFrame(data=data_dict)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    ax.scatter(x_data, y_data, z_data, c=color, cmap=color_palette, s=30)
+
+    # make simple, bare axis lines through space:
+    xAxisLine = ((min(x_data), max(x_data)), (0, 0), (0, 0))
+    ax.plot(xAxisLine[0], xAxisLine[1], xAxisLine[2], 'r')
+    yAxisLine = ((0, 0), (min(y_data), max(y_data)), (0, 0))
+    ax.plot(yAxisLine[0], yAxisLine[1], yAxisLine[2], 'r')
+    zAxisLine = ((0, 0), (0, 0), (min(z_data), max(z_data)))
+    ax.plot(zAxisLine[0], zAxisLine[1], zAxisLine[2], 'r')
+
+    # label the axes
+    ax.set_xlabel("PC1")
+    ax.set_ylabel("PC2")
+    ax.set_zlabel("PC3")
+    ax.set_title("PCA 3 components")
+    plt.show()
+
+
+def plot_box_plot(test_accuracies, show_plot=False):
+    data_dict = {"Test Accuracy": test_accuracies}
+    data_df = pd.DataFrame(data=data_dict)
+    ax = sns.boxplot(y=data_df["Test Accuracy"])
+    ax.set_ylabel("Test Accuracy", fontsize=20)
+    ax.set_title("Box Plot", fontsize=20)
+    median = data_df["Test Accuracy"].median()
+    n = len(test_accuracies)
+    ax.text(0, median + 0.03, "n: {}".format(n), horizontalalignment='center', size='x-large', color='b',
+            weight='semibold')
+
+    if show_plot:
+        plt.show()
 
 
 def plot_raw_data_on_same_graph(datas, legend_labels, show_plot=False):
@@ -135,8 +194,9 @@ def __config_cell_text_and_colors(array_df, line, col, text, posi, fontsize, pre
     text_add = []
     text_del = []
     cell_val = array_df[line][col]
-    tot_all = array_df[-1][-1]
-    per = (float(cell_val) / tot_all) * 100
+    # tot_all = array_df[-1][-1]
+    tot_col = array_df[-1][col]
+    per = (float(cell_val) / tot_col) * 100
     curr_column = array_df[:, col]
     ccl = len(curr_column)
 
@@ -211,7 +271,7 @@ def __config_cell_text_and_colors(array_df, line, col, text, posi, fontsize, pre
 
 
 def plot_confusion_matrix(true_labels, predictions, fruits=None, annotate=True, cmap="Oranges", precision=".2f",
-                          font_size=11, line_width=0.5, colorbar=False, figsize=(7, 7), show_null_values=False,
+                          font_size=20, line_width=0.5, colorbar=False, figsize=(7, 7), show_null_values=False,
                           prediction_axis="y", insert_totals=True, title="Confusion matrix", show_plot=False):
 
     # Get the confusion matrix data frame
@@ -235,8 +295,8 @@ def plot_confusion_matrix(true_labels, predictions, fruits=None, annotate=True, 
                      cbar=colorbar, cmap=cmap, fmt=precision)
 
     # set tick labels rotation
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, fontsize=10)
-    ax.set_yticklabels(ax.get_yticklabels(), rotation=25, fontsize=10)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, fontsize=font_size)
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=25, fontsize=font_size)
 
     # Turn off all the ticks
     for tick in ax.xaxis.get_major_ticks():
@@ -279,9 +339,9 @@ def plot_confusion_matrix(true_labels, predictions, fruits=None, annotate=True, 
         ax.text(item['x'], item['y'], item['text'], **item['kw'])
 
     # titles and legends
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.set_title(title, fontsize=font_size)
+    ax.set_xlabel(x_label, fontsize=font_size)
+    ax.set_ylabel(y_label, fontsize=font_size)
     plt.tight_layout()  # set layout slim
     if show_plot:
         plt.show()
@@ -352,7 +412,7 @@ def __create_spline(data_to_convert_to_spline):
     return x_values, y_values
 
 
-def plot_train_statistics1(losses, train_accuracy, test_accuracy):
+def plot_train_statistics1(losses, train_accuracy, test_accuracy, show_plot=False):
     fig, axs = plt.subplots(nrows=3, ncols=1)
     # plt.subplot(nrows=1, ncols=3, index=0)
     palette = plt.get_cmap('Set2')
@@ -363,13 +423,16 @@ def plot_train_statistics1(losses, train_accuracy, test_accuracy):
         cur_ax = axs[i]
         cur_ax.plot(range(len(stat)), stat, marker="", color=palette(i), linewidth=1, alpha=0.4)
         # cur_ax.tick_params(direction="in")
-        cur_ax.set_xlabel("Epoch")
-        cur_ax.set_ylabel(y_label)
+        cur_ax.set_xlabel("Epoch", fontsize=20)
+        cur_ax.set_ylabel(y_label, fontsize=15)
         # cur_ax.set_title(y_label, color=palette(i))
         x_spline, y_spline = __create_spline(stat)
         cur_ax.plot(x_spline, y_spline, marker="", color=palette(i), linewidth=2.4, alpha=0.9)
 
-    plt.suptitle("Train Statistics")
+    plt.suptitle("Train Statistics", fontsize=20)
+
+    if show_plot:
+        plt.show()
 
 
 def plot_train_statistics(x_values, y_values, x_label, y_label, show_plot=False, interpolate_spline=True):
